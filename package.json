@@ -1,0 +1,36 @@
+{
+  "name": "eudoros",
+  "version": "1.0.0",
+  "author": "Sebastian Wirkijowski",
+  "description": "A small and simple logger with write-to-file support and dynamic log levels.",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/xwirkijowski/eudoros#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xwirkijowski/eudoros.git"
+  },
+  "bugs": {
+    "url": "https://github.com/xwirkijowski/eudoros/issues"
+  },
+  "main": "dist/index.cjs",
+  "module": "dist/index.esm.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    "esm": "./dist/index.esm.js",
+    "cjs": "./dist/index.cjs",
+    "es2022": "./dist/index.js"
+  },
+  "scripts": {
+    "ts": "tsc",
+    "rollup": "rollup -c",
+    "build": "npm run ts && npm run rollup"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.1",
+    "@rollup/plugin-node-resolve": "^15.3.0",
+    "@rollup/plugin-typescript": "^12.1.1",
+    "@types/node": "^22.9.0",
+    "rollup": "^4.26.0",
+    "typescript": "^5.6.3"
+  }
+}
