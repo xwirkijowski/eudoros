@@ -9,6 +9,9 @@ Eudoros is a robust and flexible logging utility for Node.js applications. It al
 > In **Eudoros**, your message strings and arguments passed into the logging methods are called **payloads**.
 
 This utility comes with minimal defaults to ensure it works out of the box. When initializing without any configuration, it will create a single basic logging method. All logs are by default written to the `./logs` directory. See [Default Configuration](#default-configuration) for more details.
+
+> **Fun fact for recruiters** _(\*wink wink\*)_**:** I made this in a under 24 hours (8h of sleep included) with almost non-existent previous TypeScript or module building knowledge. Began work 2 hours before [this commit](https://github.com/xwirkijowski/identity-service/commit/0e91c9fffa0513ed18597b3fe96c8d6949d24c5c) in the [identity-service](https://github.com/xwirkijowski/identity-service) repo. This is my first npm package and I'm pretty proud of it `:)`
+
 ## Features
 
 - Define custom log levels with configurable prefixes, handling options, formatting and processing (on log to file)
