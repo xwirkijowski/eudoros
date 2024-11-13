@@ -152,27 +152,28 @@ export class Eudoros {
                 this.#internalErrorLog(`Error in provided \`formatToString()\` function on \`${level.label}\`!`, err);
             }
         } else if (Array.isArray(payload)) {
-            payload = payload.map((arg: any) => {
-                if (typeof arg === "number") { // Format numbers
-                    return formatArgs
-                        ? `\x1b[33m${Number(arg)}\x1b[0m`
-                        : Number(arg);
-                } else if (typeof arg === "object" && Array.isArray(arg)) { // Format arrays
-                    return formatArgs
-                        ? `\x1b[32m${arg.join(", ")}\x1b[0m`
-                        : arg.join(", ");
-                } else if (arg instanceof Date) { // Format Date instances
-                    return formatArgs
-                        ? `\x1b[35m${arg.toISOString()}\x1b[0m`
-                        : arg.toISOString();
-                } else if (typeof arg === 'object') { // Format standard objects
-                    return formatArgs
-                        ? `\x1b[36m${String(`\n[${arg.constructor.name}, ${typeof arg}]\n${JSON.stringify(arg, null, 4)}`)}\x1b[0m`
-                        : String(`\n[${arg.constructor.name}, ${typeof arg}]\n+${JSON.stringify(arg, null, 4)}`);
-                }
-
-                return arg;
-            }).join(" / ")
+            payload = payload
+                .filter((arg: any) => arg !== undefined) // Filter out undefined
+                .map((arg: any) => {
+                    if (typeof arg === "number") { // Format numbers
+                        return formatArgs
+                            ? `\x1b[33m${Number(arg)}\x1b[0m`
+                            : Number(arg);
+                    } else if (typeof arg === "object" && Array.isArray(arg)) { // Format arrays
+                        return formatArgs
+                            ? `\x1b[32m${arg.join(", ")}\x1b[0m`
+                            : arg.join(", ");
+                    } else if (arg instanceof Date) { // Format Date instances
+                        return formatArgs
+                            ? `\x1b[35m${arg.toISOString()}\x1b[0m`
+                            : arg.toISOString();
+                    } else if (typeof arg === 'object') { // Format standard objects
+                        return formatArgs
+                            ? `\x1b[36m${String(`\n[${arg.constructor.name}, ${typeof arg}]\n${JSON.stringify(arg, null, 4)}`)}\x1b[0m`
+                            : String(`\n[${arg.constructor.name}, ${typeof arg}]\n+${JSON.stringify(arg, null, 4)}`);
+                    } else return arg;
+                })
+                .join(" / ")
         } else if (typeof payload === 'object') {
             payload = JSON.stringify(payload, null, 2);
         }
