@@ -41,6 +41,7 @@ export default {
 			format: [],
 			logToFile: 'request',
 			formatToString: (payload) => {
+				payload = payload[0];
 				return `Request ${payload.requestId} finished in ${payload.time}ms, received at ${payload.timestampStart.toISOString()}, user ${payload?.userId||'UNAUTHENTICATED'}`
 			}
 		},
