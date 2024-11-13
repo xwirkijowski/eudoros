@@ -8,7 +8,7 @@ Eudoros is a robust and flexible logging utility for Node.js applications. It al
 
 > In **Eudoros**, your message strings and arguments passed into the logging methods are called **payloads**.
 
-This utility comes with minimal defaults to ensure it works out of the box. When initializing without any configuration, it will create a single basic logging method. All logs are by default written to the `./logs` directory. See [Default Configuration](##-default-configuration) for more details.
+This utility comes with minimal defaults to ensure it works out of the box. When initializing without any configuration, it will create a single basic logging method. All logs are by default written to the `./logs` directory. See [Default Configuration](#default-configuration) for more details.
 ## Features
 
 - Define custom log levels with configurable prefixes, handling options, formatting and processing (on log to file)
