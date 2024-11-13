@@ -12,13 +12,12 @@
   "bugs": {
     "url": "https://github.com/xwirkijowski/eudoros/issues"
   },
-  "main": "dist/index.cjs",
-  "module": "dist/index.esm.js",
-  "types": "dist/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.esm.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    "esm": "./dist/index.esm.js",
-    "cjs": "./dist/index.cjs",
-    "es2022": "./dist/index.js"
+    ".": "./dist/index.cjs",
+    "./esm": "./dist/index.esm.js"
   },
   "scripts": {
     "ts": "tsc",
