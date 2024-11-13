@@ -167,10 +167,12 @@ export class Eudoros {
                         return formatArgs
                             ? `\x1b[35m${arg.toISOString()}\x1b[0m`
                             : arg.toISOString();
+                    } else if (arg instanceof Error) { // Do not format Errors
+                        return arg;
                     } else if (typeof arg === 'object') { // Format standard objects
                         return formatArgs
-                            ? `\x1b[36m${String(`\n[${arg.constructor.name}, ${typeof arg}]\n${JSON.stringify(arg, null, 4)}`)}\x1b[0m`
-                            : String(`\n[${arg.constructor.name}, ${typeof arg}]\n+${JSON.stringify(arg, null, 4)}`);
+                            ? `\x1b[36m${JSON.stringify(arg)}\x1b[0m`
+                            : String(`${JSON.stringify(arg)}`);
                     } else return arg;
                 })
                 .join(" / ")
