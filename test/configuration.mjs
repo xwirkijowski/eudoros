@@ -5,10 +5,15 @@ export default {
 	levels: [
 		{ // Critical errors that cause performance degradation or shutdown
 			label: 'critical',
-			prefix: `\x1b[1m\x1b[31m[\u{2717}]\x1b[0m`, // Bold, red
-			format: ['\x1b[1m\x1b[31m', '\x1b[0m'], // Bold, red
+			prefix: `\x1b[31m[\u{2717}]\x1b[0m`, // Bold, red
+			format: ['\x1b[31m', '\x1b[0m'], // Bold, red
 			logToFile: true,
-			consoleMethodName: 'error'
+			consoleMethodName: 'error',
+			trace: {
+				groupLabel: 'Critical error encountered.',
+				groupPrefix: '\x1b[31m[\u{26A0}]\x1b[0m',
+				format: ['\x1b[31m', '\x1b[0m']
+			}
 		},
 		{ // Non-critical errors
 			label: 'error',

@@ -27,12 +27,25 @@ declare namespace $E {
         format?: [string, string]|[string, string, string, string]
         // True to output to file, string to specify a suffix to `log-<>` in the filename for this log level
         logToFile?: boolean|string,
+        /**
+         * Enabling this option will split output into message and trace, and group them together.
+         * All arguments will be in the first message, the last argument will be passed into trace.
+         */
+        trace?: Trace,
         // Which console method to use for this level (e.g. console.<log>, console.<error>)
         consoleMethodName?: ConsoleMethod,
         // The name of the method that will be created, defaults to label
         methodName?: string,
         // A function that processes objects into a string with your own formatting, used only when logging to file.
         formatToString?: formatToString
+    }
+
+    // Trace options
+    interface Trace {
+        // The label passed into `console.group()`
+        groupLabel?: string
+        groupPrefix?: string,
+        format?: [string, string]
     }
 
     // Logging methods accepted by `console`
@@ -128,6 +141,24 @@ export class Eudoros {
         })
     }
 
+    #formatGroup = (level: $E.Level, domain?: string|null): string => {
+        if (!level.trace) {
+            this.#internalErrorLog(`Cannot format trace on \`${level.label}\`, no trace config defined!`)
+            return `<Format group error!>`;
+        } else {
+            const prefix: string = level.trace.groupPrefix || '';
+            const label: string = level.trace.groupLabel || '';
+            const format = (level.trace.format && Array.isArray(level.format) && level.trace.format.length > 0) ?  level.trace.format : ['', ''];
+            const timestamp = `${format[0]}${new Date().toISOString()}${format[1]}`;
+
+            if (domain) {
+                domain = `${format[0]}[${domain}]${format[1]}`;
+            }
+
+            return `${prefix?prefix+' ':''}${timestamp}${domain?` ${domain} `:' '}${label}`;
+        }
+    }
+
     /**
      * Apply user defined log level formatting and prepare the payload itself.
      * All `args` are turned into a single string, objects undergo `JSON.stringify`.
@@ -137,7 +168,7 @@ export class Eudoros {
      * @param 	args	Log payload
      */
     #formatPayload = (level: $E.Level, domain?: string|null, ...args: $E.Payload[]): string => {
-        const prefix = level.prefix || '';
+        const prefix: string = level.prefix || '';
         const format = (level.format && Array.isArray(level.format) && level.format.length > 0) ?  level.format : ['', ''];
         const timestamp = `${format[0]}${new Date().toISOString()}${format[1]}`;
 
@@ -152,6 +183,10 @@ export class Eudoros {
                 this.#internalErrorLog(`Error in provided \`formatToString()\` function on \`${level.label}\`!`, err);
             }
         } else if (Array.isArray(payload)) {
+            if (level?.trace && payload.length > 1) { // If with trace and has more than 1 arg, pop trace arg
+                payload.pop();
+            }
+
             payload = payload
                 .filter((arg: any) => arg !== undefined) // Filter out undefined
                 .map((arg: any) => {
@@ -184,7 +219,7 @@ export class Eudoros {
             domain = `${format[0]}[${domain}]${format[1]}`;
         }
 
-        return `${prefix?prefix+' ':''}${timestamp}${domain?` ${domain} `:' '}${format[2]||''}${payload}${format[3]||''}`;
+        return (level.trace) ? `${prefix?prefix+' ':''}${payload}` : `${prefix?prefix+' ':''}${timestamp}${domain?` ${domain} `:' '}${format[2]||''}${payload}${format[3]||''}`;
     }
 
     /**
@@ -210,7 +245,18 @@ export class Eudoros {
         }
 
         // Run as soon as possible, do not block current operations
-        process.nextTick(() => console[consoleMethod as $E.ConsoleMethod](message));
+        process.nextTick(() => {
+            const trace = args[args.length - 1];
+
+            if (level.trace) {
+                console.group(this.#formatGroup(level, domain));
+                console[consoleMethod as $E.ConsoleMethod](message);
+                trace && console.trace(trace);
+                console.groupEnd();
+            } else {
+                console[consoleMethod as $E.ConsoleMethod](message);
+            }
+        });
 
         if (level.logToFile && this.#options?.outputDirectory) this.#logToFile(level, null, ...args);
     }
