@@ -238,8 +238,8 @@ export class Eudoros {
             if (domain) lineHead.domain = domain;
 
             const line: $E.FilePayload = JSON.stringify({
-                lineHead,
-                ...args
+                ...lineHead,
+                args
             });
 
             const fileName = (typeof level.logToFile === "string")
