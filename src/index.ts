@@ -7,22 +7,34 @@ declare namespace $E {
     }
 
     interface Options {
+        // Specify log file output directory, if null logging to files disabled
         outputDirectory?: string|null,
         //createOutputDirectory?: boolean;
     }
 
     // The logging level object
+    /**
+     *
+     */
     interface Level {
+        // The name of the logging level
         label: string,
+        // Prefix that appears at the start of the log message in console
         prefix?: string,
+        // Formatting of the timestamp and domain elements (ANSI bindings or extra characters)
         format?: [string, string]|[string, string, string, string]
+        // True to output to file, string to specify a suffix to `log-<>` in the filename for this log level
         logToFile?: boolean|string,
-        method?: Method,
+        // Which console method to use for this level (e.g. console.<log>, console.<error>)
+        consoleMethodName?: ConsoleMethod,
+        // The name of the method that will be created, defaults to label
+        methodName?: string,
+        // A function that processes objects into a string with your own formatting, used only when logging to file.
         formatToString?: formatToString
     }
 
     // Logging methods accepted by `console`
-    type Method = 'log'|'info'|'error'|'warn'|'debug';
+    type ConsoleMethod = 'log'|'info'|'error'|'warn'|'debug';
 
     // Head of the log with information set at the time of insertion (not from payload)
     type FilePayloadHead = {
@@ -59,8 +71,8 @@ export class Eudoros {
         //createOutputDirectory: true,
     };
 
-    isValidMethod = (method: string): method is $E.Method => {
-        return ['log', 'info', 'error', 'warn', 'debug'].includes(method);
+    isValidMethod = (consoleMethod: string): consoleMethod is $E.ConsoleMethod => {
+        return ['log', 'info', 'error', 'warn', 'debug'].includes(consoleMethod);
     }
 
     /**
@@ -84,7 +96,11 @@ export class Eudoros {
      */
     #initLevels (): void {
         this.#levels.forEach((level) => {
-            (this as any)[level.label.toLowerCase()] = async (...args: $E.Payload[]) => {
+            const methodName: string = level?.methodName
+                ? level.methodName.toLowerCase()
+                : level.label.toLowerCase();
+
+            (this as any)[methodName] = async (...args: $E.Payload[]) => {
                 // Fire and forget - don't block
                 this.#handleLog(level, undefined, ...args).catch(err => {
                     console.error(`Error during error handling ${level.label}: ${err}`)
@@ -144,10 +160,18 @@ export class Eudoros {
     #handleLog = async (level: $E.Level, domain?: string|null, ...args: $E.Payload[]): Promise<void> => {
         const message = this.#formatPayload(level, domain, ...args);
 
-        const method: string = level.method ?? (this.isValidMethod(level.label)) ? level.label : this.#default_method;
+        let consoleMethod: string;
+
+        if (level?.consoleMethodName && this.isValidMethod(level.consoleMethodName)) {
+            consoleMethod = level.consoleMethodName;
+        } else if (this.isValidMethod(level.label)) {
+            consoleMethod = level.label;
+        } else {
+            consoleMethod = this.#default_method;
+        }
 
         // Run as soon as possible, do not block current operations
-        process.nextTick(() => console[method as $E.Method](message));
+        process.nextTick(() => console[consoleMethod as $E.ConsoleMethod](message));
 
         if (level.logToFile && this.#options?.outputDirectory) this.#logToFile(level, null, ...args);
     }
@@ -207,7 +231,6 @@ export class Eudoros {
             console.error(`Error during error handling ${level} with domain: ${err}`)
         }); else console.log(`Invalid log level \`${level}\` provided!`)
     }
-
 }
 
 /**
