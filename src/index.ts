@@ -9,6 +9,8 @@ declare namespace $E {
     interface Options {
         // Specify log file output directory, if null logging to files disabled
         outputDirectory?: string|null,
+        // Weather to apply formatting to payload args (i.e. color Date instanced, numbers, objects)
+        formatArgs?: boolean,
         //createOutputDirectory?: boolean;
     }
 
@@ -68,8 +70,25 @@ export class Eudoros {
     ];
     readonly #default_options = {
         outputDirectory: './logs',
+        formatArgs: true,
         //createOutputDirectory: true,
     };
+
+    /**
+     * Internal error reporting.
+     *
+     * If an exception is caught inside the logger, this function will handle it and display all details.
+     *
+     * @param       msg     Descriptive error message
+     * @param       err     The error object
+     * @private
+     */
+    readonly #internalErrorLog = (msg: string, err?: any) => {
+        console.group(`\x1b[31m[\u{26A0}]\x1b[0m`, `\x1b[31m${new Date().toISOString()}\x1b[0m`, 'Eudoros caught an exception.');
+        console.error(`\x1b[31m[>]\x1b[0m`, msg);
+        err && console.trace(err);
+        console.groupEnd();
+    }
 
     isValidMethod = (consoleMethod: string): consoleMethod is $E.ConsoleMethod => {
         return ['log', 'info', 'error', 'warn', 'debug'].includes(consoleMethod);
@@ -103,7 +122,7 @@ export class Eudoros {
             (this as any)[methodName] = async (...args: $E.Payload[]) => {
                 // Fire and forget - don't block
                 this.#handleLog(level, undefined, ...args).catch(err => {
-                    console.error(`Error during error handling ${level.label}: ${err}`)
+                    this.#internalErrorLog(`Error during log handling \`${level.label}\`!`, err)
                 });
             }
         })
@@ -119,33 +138,50 @@ export class Eudoros {
      */
     #formatPayload = (level: $E.Level, domain?: string|null, ...args: $E.Payload[]): string => {
         const prefix = level.prefix || '';
-        const format = level.format || ['', ''];
+        const format = (level.format && Array.isArray(level.format) && level.format.length > 0) ?  level.format : ['', ''];
         const timestamp = `${format[0]}${new Date().toISOString()}${format[1]}`;
+
+        const formatArgs: boolean = this.#options?.formatArgs??false;
 
         let payload: $E.Payload[]|$E.Payload = args;
 
-        if (level?.formatToString && Array.isArray(payload) && typeof payload[0] === 'object') {
-            payload = level.formatToString(payload[0]);
-        } else {
-            if (Array.isArray(payload)) {
-                payload
-                    .map((arg: any) => {
-                        if (typeof arg === 'object') {
-                            return JSON.stringify(arg, null, 2);
-                        }
-                        return String(arg);
-                    })
-                    .join(' ')
-            } else if (typeof payload === 'object') {
-                payload = JSON.stringify(payload, null, 2);
+        if (level?.formatToString) {
+            try {
+                payload = level.formatToString(payload);
+            } catch (err) {
+                this.#internalErrorLog(`Error in provided \`formatToString()\` function on \`${level.label}\`!`, err);
             }
+        } else if (Array.isArray(payload)) {
+            payload = payload.map((arg: any) => {
+                if (typeof arg === "number") { // Format numbers
+                    return formatArgs
+                        ? `\x1b[33m${Number(arg)}\x1b[0m`
+                        : Number(arg);
+                } else if (typeof arg === "object" && Array.isArray(arg)) { // Format arrays
+                    return formatArgs
+                        ? `\x1b[32m${arg.join(", ")}\x1b[0m`
+                        : arg.join(", ");
+                } else if (arg instanceof Date) { // Format Date instances
+                    return formatArgs
+                        ? `\x1b[35m${arg.toISOString()}\x1b[0m`
+                        : arg.toISOString();
+                } else if (typeof arg === 'object') { // Format standard objects
+                    return formatArgs
+                        ? `\x1b[36m${String(`\n[${arg.constructor.name}, ${typeof arg}]\n${JSON.stringify(arg, null, 4)}`)}\x1b[0m`
+                        : String(`\n[${arg.constructor.name}, ${typeof arg}]\n+${JSON.stringify(arg, null, 4)}`);
+                }
+
+                return arg;
+            }).join(" / ")
+        } else if (typeof payload === 'object') {
+            payload = JSON.stringify(payload, null, 2);
         }
 
         if (domain) {
             domain = `${format[0]}[${domain}]${format[1]}`;
         }
 
-        return `${prefix} ${timestamp}${domain?` ${domain} `:' '}${format[2]||''}${payload}${format[3]||''}`;
+        return `${prefix?prefix+' ':''}${timestamp}${domain?` ${domain} `:' '}${format[2]||''}${payload}${format[3]||''}`;
     }
 
     /**
@@ -186,7 +222,7 @@ export class Eudoros {
      */
     #logToFile = (level: $E.Level, domain?: string|null, ...args: $E.Payload[]): void => {
         if (!this.#options?.outputDirectory) {
-            console.error('Cannot log to file! Configuration error, failed to load defaults.')
+            this.#internalErrorLog('Cannot log to file! Configuration error, failed to load defaults.')
         } else {
             const date = new Date();
             // Build date substring for file name, add padded zeros to month and date
@@ -210,8 +246,8 @@ export class Eudoros {
                 ? `${level.label}-log-${dateString}`
                 : `log-${dateString}`;
 
-            fs.appendFile(`${this.#options.outputDirectory}/${fileName}.txt`, line, { flag: 'a+' }, err => {
-                if (err) console.error(`Cannot write log to file. ${err}`);
+            fs.appendFile(`${this.#options.outputDirectory}/${fileName}.txt`, line+'\r\n', { flag: 'a+' }, err => {
+                if (err) this.#internalErrorLog(`Cannot write log to file!`, err);
             })
         }
 
@@ -228,8 +264,8 @@ export class Eudoros {
         const levelObject = this.#levels.find(obj => obj?.label === level);
 
         if (levelObject) this.#handleLog(levelObject, domain, ...args).catch(err => {
-            console.error(`Error during error handling ${level} with domain: ${err}`)
-        }); else console.log(`Invalid log level \`${level}\` provided!`)
+            this.#internalErrorLog(`Error during error handling \`${level}\` with domain!`, err);
+        }); else this.#internalErrorLog(`Invalid log level \`${level}\` provided!`)
     }
 }
 
