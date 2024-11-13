@@ -23,7 +23,9 @@
   "scripts": {
     "ts": "tsc",
     "rollup": "rollup -c",
-    "build": "npm run ts && npm run rollup"
+    "build": "npm run ts && npm run rollup",
+    "build-test": "npm run build && npm run test",
+    "test": "node test/index.mjs"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^28.0.1",
