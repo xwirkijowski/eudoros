@@ -1,8 +1,318 @@
-# Eudoros
-A small logging library with write to file support and dynamic log levels.
+# 🛠️ Eudoros - Compact & Flexible Logging Utility
 
-## Getting Started
+A powerful and customizable logging library for Node.js, with support for custom log levels, formatting, and file logging.
 
-## Configuration
+## Overview
 
-## Usage Examples
+Eudoros is a robust and flexible logging utility for Node.js applications. It allows you to define custom logging levels with configurable prefixes, formatting, and file logging capabilities. The library is designed to be highly extensible and easy to integrate into your project.
+
+> In **Eudoros**, your message strings and arguments passed into the logging methods are called **payloads**.
+
+This utility comes with minimal defaults to ensure it works out of the box. When initializing without any configuration, it will create a single basic logging method. All logs are by default written to the `./logs` directory. See [Default Configuration](##-default-configuration) for more details.
+## Features
+
+- Define custom log levels with configurable prefixes, handling options, formatting and processing (on log to file)
+- Supports various console methods (all valid methods: `log`, `info`, `error`, `warn`, `debug`)
+- Optional automatic formatting of payload arguments (numbers, dates, objects)
+- Optional console log grouping and exception trace insertion
+- Option to output logs to files with custom file naming (JSON format)
+- Asynchronous logging using `process.nextTick()` to avoid blocking your main application
+- Comprehensive error handling and internal error reporting
+
+## Installation
+
+You can install Eudoros using npm `npm install eudoros`. Remember to use `--save` or `--save-dev` according to your needs.
+
+## Usage
+
+You can manually choose whether to choose the ESM or CJS version. By default `import { Eudoros } from 'eudoros'` will import the CommonJS version. You can use the ECMAScript module version by specifying the export path `import { Eudoros } from 'eudoros/esm'`.
+
+> Keep in mind that you cannot add new levels after initialization!
+
+### Basic Example
+
+```typescript
+// index.js or logger.js
+import { Eudoros } from 'eudoros';
+
+const logger = new Eudoros({
+  levels: [
+    { label: 'debug', prefix: '[DEBUG]', logToFile: 'debug' },
+    { label: 'info', prefix: '[INFO]', logToFile: true },
+    { label: 'error', prefix: '[ERROR]', consoleMethodName: 'error', logToFile: 'error' },
+  ],
+  options: {
+    outputDirectory: './logs',
+    formatArgs: true,
+  },
+});
+
+logger.debug('This is a debug message');
+logger.info('This is an info message');
+logger.error('This is an error message', new Error('Something went wrong'));
+
+export default logger; // Export instance for use in other components
+```
+
+### EudorosBuilder
+
+As an alternative way to initialize the logger  you can also use the `EudorosBuilder` class. This can be helpful if you want to loop over an array to add your levels.
+
+```typescript
+// index.js or logger.js
+import { EudorosBuilder } from 'eudoros';
+
+const builder = new EudorosBuilder({
+  outputDirectory: './logs',
+  formatArgs: true,
+})
+  .addLevel({
+    label: 'debug',
+    prefix: '[DEBUG]',
+    logToFile: 'debug',
+  })
+  .addLevel({
+    label: 'info',
+    prefix: '[INFO]',
+    logToFile: true,
+  })
+  // ...you can add as many as you like! Just don't overdo it.
+
+const logger = builder.init();
+
+logger.debug('This is a debug message');
+logger.info('This is an info message');
+logger.error('This is an error message', new Error('Something went wrong'));
+
+export default logger; // Export instance for use in other components
+```
+
+### init Function
+
+The last way to initialize is the `init` function, made as an alternative to the class-based approach, because why not?
+
+```typescript
+import { init } from 'eudoros';
+
+const logger = init({
+  levels: [
+    { label: 'debug', prefix: '[DEBUG]', logToFile: 'debug' },
+    { label: 'info', prefix: '[INFO]', logToFile: true },
+    { label: 'error', prefix: '[ERROR]', consoleMethodName: 'error', logToFile: 'error' },
+  ],
+  options: {
+    outputDirectory: './logs',
+    formatArgs: true,
+  },
+});
+
+logger.debug('This is a debug message');
+logger.info('This is an info message');
+logger.error('This is an error message', new Error('Something went wrong'));
+```
+
+### Logging with domains (distinguishing components)
+
+```js
+// auth.service.js
+logger.withDomain('debug', 'AuthService', 'Validating token');
+logger.withDomain('error', 'AuthService', 'Invalid token', token, error);
+
+// user.service.js
+logger.withDomain('info', 'UserService', 'Creating new user', userData);
+logger.withDomain('warn', 'UserService', 'Duplicate email detected', email);
+
+// payment.service.js
+logger.withDomain('info', 'PaymentService', 'Processing payment', orderId);
+logger.withDomain('error', 'PaymentService', 'Payment failed', orderId, error);
+```
+The `withDomain()` method provides an alternative way to log messages with an additional domain tag that appears after the timestamp. This is useful for distinguishing logs from different components or modules in your application.
+
+Specified domain tag will also be included in the file logs (if enabled), making them easier to filter and analyze.
+
+> When using `withDomain()`, the domain tag is formatted using the same format array as defined in your level configuration.
+
+#### This method accepts three parameters:
+
+| Parameter | Type | Description                                                                        |
+| --- | --- |------------------------------------------------------------------------------------|
+| `level` | `string` | The logging level to use (must match one of your defined levels).                  |
+| `domain` | `string` | A string identifier for the component/module.                                      |
+| `...args` | `$E.Payload[]` | The logging payload (supports all the same formatting as regular logging methods). |
+
+## Default Configuration
+
+```typescript
+// Default logging levels array if none specified
+const default_levels = [{
+    label: 'log',
+    prefix: '[>]'
+}];
+
+// Default options
+const default_options = {
+    outputDirectory: './logs',
+    formatArgs: true
+};
+```
+
+These defaults are merged with provided configuration using spread operator (`{...defaults, ...yourOptions}`), so you only need to specify the options you want to define or override.
+
+## Configuration Options
+
+The Eudoros constructor accepts a `$E.Config` object with the following properties:
+
+### $E.Config
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `levels` | `Array<$E.Level>` | An array of logging level objects. |
+| `options` | `$E.Options` | Optional configuration options for the logging system. |
+
+### $E.Options
+The `$E.Options` object has the following properties:
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `outputDirectory` | `string\|null` | Specifies the output directory for log files. If `null`, logging to files is disabled. |
+| `formatArgs` | `boolean` | Determines whether to apply formatting to payload arguments (e.g., coloring Date instances, numbers, objects). |
+
+### $E.Level
+The `$E.Level` object has the following properties:
+
+| Property | Type | Description                                                                                                                        |
+| --- | --- |------------------------------------------------------------------------------------------------------------------------------------|
+| `label` | `string` | The name of the logging level.                                                                                                     |
+| `prefix` | `string` | The prefix that appears at the start of the log message in the console.                                                            |
+| `format` | `[string, string]\|[string, string, string, string]` | The formatting of the timestamp and domain elements (ANSI bindings or extra characters).                                           |
+| `logToFile` | `boolean\|string` | Determines whether to output the log to a file. If a string, it specifies a suffix to `log-<>` in the filename for this log level. |
+| `trace` | `$E.Trace` | Options for splitting the payload into message and trace, and grouping them together in separate `console` calls.                  |
+| `consoleMethodName` | `$E.ConsoleMethod` | The console method to use for this logging level (e.g., `console.log`, `console.error`). Defaults to `log`.                        |
+| `methodName` | `string` | The name of the method that will be created, defaults to `label`.                                                                  |
+| `formatToString` | `$E.formatToString` | A function that processes objects into a string with custom formatting, used only when logging to file.                            |
+
+### $E.Trace
+> **Note:** When using the `trace` option, **the last argument in the logging method will always be removed from the payload**.
+The last argument will be used in a subsequent `console.trace()` call if it's not `undefined`, `null` or otherwise falsy.
+> 
+Options used to configure the grouped trace logging.
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `groupLabel` | `string` | The label passed into `console.group()`. |
+| `groupPrefix` | `string` | The prefix for the group label. |
+| `format` | `[string, string]` | The formatting of the trace output. |
+
+ #### Example use case:
+ ```js
+ someFunction({foo, bar}, cb => { /* business logic */ }).catch(e => {
+   log.critical('Cannot perform this action!', x, y, z, err)
+ })
+ ```
+ Will result in...
+ ```
+ [⚠] 2024-11-13T19:14:28.774Z Critical error encountered.
+    [✗] Cannot perform this action! / x / y / z
+    Trace: Error: Something went wrong
+        at ...stack trace...
+```
+
+
+### $E.formatToString
+> **Note:** The `formatToString()` function is only called when writing to files, not for console output.
+```typescript
+interface formatToString {
+    (payload: Payload): string
+}
+```
+This function is especially useful when defining a special logging level for requests or auditing purposes, where usually we directly pass variables with objects or arrays in a specific order for file logging purposes.
+
+It accesses the payload variables and prepares a string to be used on the `handleLog()` method, allowing your log to also display in a human-readable form in your application console.
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `payload` | `Payload` | The logging payload (array of arguments passed to log method) |
+| Returns | `string` | Formatted string to be written to the log file |
+
+#### Example implementation:
+```typescript
+const formatToString: formatToString = (payload) => {
+    const [request] = payload; // Assuming first arg is request object
+    return `${request.method} ${request.url} - ${request.status}`;
+}
+```
+
+## Other Types
+
+### $E.FilePayloadHead
+This type represents the metadata header of each log entry when writing to files.
+
+| Property | Type | Description                                                      |
+| --- | --- |------------------------------------------------------------------|
+| `timestamp` | `string` | ISO timestamp of when the log was created.                       |
+| `level` | `string` | The logging level used (matches the level's label).              |
+| `domain` | `string\|undefined` | Optional domain tag if the log was created using `withDomain()`. |
+
+### $E.FilePayload
+The complete log entry structure that gets written to files. Each line in the log file is a JSON string containing:
+
+| Property | Type | Description                                          |
+| --- | --- |------------------------------------------------------|
+| `...FilePayloadHead` | `FilePayloadHead` | All properties from `FilePayloadHead`.                 |
+| `args` | `Array<Payload>` | Array of all arguments passed to the logging method. |
+
+### $E.Payload
+Represents the valid types that can be passed as logging arguments.
+
+| Type | Description | File Log Format | Console Format (when `formatArgs: true`) |
+| --- | --- | --- | --- |
+| `string` | Basic text messages | Raw string | Raw string |
+| `number` | Numeric values | Number | Yellow colored text |
+| `boolean` | Boolean values | Boolean | Raw boolean |
+| `object` | JavaScript objects | JSON string | Cyan colored JSON string |
+| `Array<any>` | Arrays of any type | Comma-separated string | Green colored comma-separated list |
+| `Date` | Date instances | ISO string | Magenta colored ISO string |
+| `Error` | Error objects | Error toString() | Raw error (for stack traces) |
+
+### $E.ConsoleMethod
+Valid console methods that can be used for logging.
+
+| Value | Description |
+| --- | --- |
+| `'log'` | Standard output (default) |
+| `'info'` | Informational output |
+| `'error'` | Error output |
+| `'warn'` | Warning output |
+| `'debug'` | Debug output |
+
+## Internal Error Handling
+
+Eudoros includes a built-in error reporting system that ensures logging failures don't crash your application. When an error occurs within the logger itself, it will:
+
+1. Create a visually distinct error group in the console with a warning symbol (⚠️)
+2. Include timestamp of the exception
+3. Display a descriptive error message
+4. Show a stack trace if an error object is available
+5. Continue operation without interrupting the application
+
+For example, if writing to a log file fails, you'll see:
+```
+[⚠] 2024-11-13T19:14:28.774Z Eudoros caught an exception.
+    [>] Cannot write log to file!
+    Error: EACCES: permission denied
+        at ...stack trace...
+```
+
+Common scenarios where internal error handling activates:
+- Invalid log level configuration
+- File system permission issues
+- Custom format function errors
+- Invalid console method names
+
+## Contributing
+
+You are welcome to contributions to Eudoros! If you have any ideas, bug reports, or pull requests, feel free to submit them to the [GitHub repository](https://github.com/xwirkijowski/eudoros).
+
+## License
+
+Eudoros is licensed under the [Apache License 2.0](LICENSE).

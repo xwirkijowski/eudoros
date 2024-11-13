@@ -28,8 +28,9 @@ declare namespace $E {
         // True to output to file, string to specify a suffix to `log-<>` in the filename for this log level
         logToFile?: boolean|string,
         /**
-         * Enabling this option will split output into message and trace, and group them together.
-         * All arguments will be in the first message, the last argument will be passed into trace.
+         * Enabling this option will split payload into message and trace, and group them together.
+         * All arguments will be in the first message, the last argument will always be removed from payload.
+         * If the last argument is null or undefined, no `console.trace` call will be sent.
          */
         trace?: Trace,
         // Which console method to use for this level (e.g. console.<log>, console.<error>)
@@ -84,7 +85,6 @@ export class Eudoros {
     readonly #default_options = {
         outputDirectory: './logs',
         formatArgs: true,
-        //createOutputDirectory: true,
     };
 
     /**
@@ -263,7 +263,7 @@ export class Eudoros {
 
     /**
      * Prepare the log payload for file logging.
-     * File logs are saved as a JSON string to make them compatible with Grafana.
+     * File logs are saved as a JSON string to make them easier to plug into Grafana.
      *
      * @param 	level	The logging level
      * @param   domain  Optional domain
