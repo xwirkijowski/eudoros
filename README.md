@@ -1,5 +1,7 @@
 # 🛠️ Eudoros - Compact & Flexible Logging Utility
 
+![NPM Version](https://img.shields.io/npm/v/eudoros?style=flat&logo=npm&logoColor=ffffff&logoSize=auto&labelColor=C61B3B&color=202B2E)
+
 A powerful and customizable logging library for Node.js, with support for custom log levels, formatting, and file logging.
 
 ## Overview
@@ -30,7 +32,6 @@ You can install Eudoros using npm `npm install eudoros`. Remember to use `--save
 
 You can manually choose whether to choose the ESM or CJS version. By default `import { Eudoros } from 'eudoros'` will import the CommonJS version. You can use the ECMAScript module version by specifying the export path `import { Eudoros } from 'eudoros/esm'`.
 
-> Keep in mind that you cannot add new levels after initialization!
 
 ### Basic Example
 
@@ -60,6 +61,7 @@ export default logger; // Export instance for use in other components
 ### EudorosBuilder
 
 As an alternative way to initialize the logger  you can also use the `EudorosBuilder` class. This can be helpful if you want to loop over an array to add your levels.
+> Keep in mind that you cannot add new levels after initialization!
 
 ```typescript
 // index.js or logger.js
@@ -135,12 +137,12 @@ Specified domain tag will also be included in the file logs (if enabled), making
 
 > When using `withDomain()`, the domain tag is formatted using the same format array as defined in your level configuration.
 
-#### This method accepts three parameters:
+#### Method arguments
 
-| Parameter | Type | Description                                                                        |
-| --- | --- |------------------------------------------------------------------------------------|
-| `level` | `string` | The logging level to use (must match one of your defined levels).                  |
-| `domain` | `string` | A string identifier for the component/module.                                      |
+| Argument  | Type | Description                                                                        |
+|-----------| --- |------------------------------------------------------------------------------------|
+| `level`   | `string` | The logging level to use (must match one of your defined levels).                  |
+| `domain`  | `string` | A string identifier for the component/module.                                      |
 | `...args` | `$E.Payload[]` | The logging payload (supports all the same formatting as regular logging methods). |
 
 ## Default Configuration
@@ -173,7 +175,7 @@ The Eudoros constructor accepts a `$E.Config` object with the following properti
 | `options` | `$E.Options` | Optional configuration options for the logging system. |
 
 ### $E.Options
-The `$E.Options` object has the following properties:
+
 
 | Property | Type | Description |
 | --- | --- | --- |
@@ -181,23 +183,24 @@ The `$E.Options` object has the following properties:
 | `formatArgs` | `boolean` | Determines whether to apply formatting to payload arguments (e.g., coloring Date instances, numbers, objects). |
 
 ### $E.Level
-The `$E.Level` object has the following properties:
 
-| Property | Type | Description                                                                                                                        |
-| --- | --- |------------------------------------------------------------------------------------------------------------------------------------|
-| `label` | `string` | The name of the logging level.                                                                                                     |
-| `prefix` | `string` | The prefix that appears at the start of the log message in the console.                                                            |
-| `format` | `[string, string]\|[string, string, string, string]` | The formatting of the timestamp and domain elements (ANSI bindings or extra characters).                                           |
-| `logToFile` | `boolean\|string` | Determines whether to output the log to a file. If a string, it specifies a suffix to `log-<>` in the filename for this log level. |
-| `trace` | `$E.Trace` | Options for splitting the payload into message and trace, and grouping them together in separate `console` calls.                  |
-| `consoleMethodName` | `$E.ConsoleMethod` | The console method to use for this logging level (e.g., `console.log`, `console.error`). Defaults to `log`.                        |
-| `methodName` | `string` | The name of the method that will be created, defaults to `label`.                                                                  |
-| `formatToString` | `$E.formatToString` | A function that processes objects into a string with custom formatting, used only when logging to file.                            |
+The logging level interface. 
+
+| Property | Type | Description                                                                                                                                                                                                                                                       |
+| --- | --- |-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `label` | `string` | The name of the logging level and the only required variable.                                                                                                                                                                                                     |
+| `prefix` | `string` | The prefix that appears at the start of the log message in the console.                                                                                                                                                                                           |
+| `format` | `[string, string]\|[string, string, string, string]` | The formatting of the timestamp and domain elements (ANSI bindings or extra characters).                                                                                                                                                                          |
+| `logToFile` | `boolean\|string` | Determines whether to output the log to a file.<br/><ul><li>If a string, it adds the value as a substring  to `log-<here>-{date}.txt` in the filename for this log level.</li><li>If `true` logs to main log file.</li><li>If `false` or unset disabled.</li></ul> |
+| `trace` | `$E.Trace` | Options for splitting the payload into message and trace, and grouping them together in separate `console` calls.                                                                                                                                                 |
+| `consoleMethodName` | `$E.ConsoleMethod` | The console method to use for this logging level (e.g., `console.log`, `console.error`). Defaults to `log`.                                                                                                                                                       |
+| `methodName` | `string` | The name of the method that will be created, defaults to `label`.                                                                                                                                                                                                 |
+| `formatToString` | `$E.formatToString` | A function that processes objects into a string with custom formatting, used only when logging to file.                                                                                                                                                           |
 
 ### $E.Trace
 > **Note:** When using the `trace` option, **the last argument in the logging method will always be removed from the payload**.
-The last argument will be used in a subsequent `console.trace()` call if it's not `undefined`, `null` or otherwise falsy.
-> 
+It will be used in a subsequent `console.trace()` call if it's not `undefined`, `null` or otherwise falsy.
+
 Options used to configure the grouped trace logging.
 
 | Property | Type | Description |
@@ -206,7 +209,7 @@ Options used to configure the grouped trace logging.
 | `groupPrefix` | `string` | The prefix for the group label. |
 | `format` | `[string, string]` | The formatting of the trace output. |
 
- #### Example use case:
+ #### Example use case
  ```js
  someFunction({foo, bar}, cb => { /* business logic */ }).catch(e => {
    log.critical('Cannot perform this action!', x, y, z, err)
@@ -232,7 +235,7 @@ This function is especially useful when defining a special logging level for req
 
 It accesses the payload variables and prepares a string to be used on the `handleLog()` method, allowing your log to also display in a human-readable form in your application console.
 
-| Parameter | Type | Description |
+| Argument | Type | Description |
 | --- | --- | --- |
 | `payload` | `Payload` | The logging payload (array of arguments passed to log method) |
 | Returns | `string` | Formatted string to be written to the log file |

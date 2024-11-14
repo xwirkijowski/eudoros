@@ -103,11 +103,17 @@ export class Eudoros {
         console.groupEnd();
     }
 
+    /**
+     * Check if the provided `console` method is valid and supported.
+     * @param   consoleMethod   The `console` method
+     */
     isValidMethod = (consoleMethod: string): consoleMethod is $E.ConsoleMethod => {
         return ['log', 'info', 'error', 'warn', 'debug'].includes(consoleMethod);
     }
 
     /**
+     * Create a logger instance and initialize levels.
+     *
      * @param 	config	Configuration object
      */
     constructor (config: $E.Config) {
@@ -125,6 +131,8 @@ export class Eudoros {
 
     /**
      * Dynamically set up methods for each logging level defined in options.
+     *
+     * @private
      */
     #initLevels (): void {
         this.#levels.forEach((level) => {
@@ -141,6 +149,15 @@ export class Eudoros {
         })
     }
 
+    /**
+     * Apply user defined log level formatting and prepare the group label.
+     * Everything is turned into a single string.
+     * There are no user supplied arguments (payload) here, except for the `domain`.
+     *
+     * @param    level    The logging level
+     * @param    domain    Optional domain (extra tag after timestamp)
+     * @private
+     */
     #formatGroup = (level: $E.Level, domain?: string|null): string => {
         if (!level.trace) {
             this.#internalErrorLog(`Cannot format trace on \`${level.label}\`, no trace config defined!`)
@@ -166,6 +183,7 @@ export class Eudoros {
      * @param 	level	The logging level
      * @param	domain	Optional domain (extra tag after timestamp)
      * @param 	args	Log payload
+     * @private
      */
     #formatPayload = (level: $E.Level, domain?: string|null, ...args: $E.Payload[]): string => {
         const prefix: string = level.prefix || '';
@@ -230,6 +248,7 @@ export class Eudoros {
      * @param	level	The logging level
      * @param	domain	Optional domain (extra tag after timestamp)
      * @param 	args	Log payload
+     * @private
      */
     #handleLog = async (level: $E.Level, domain?: string|null, ...args: $E.Payload[]): Promise<void> => {
         const message = this.#formatPayload(level, domain, ...args);
@@ -268,6 +287,7 @@ export class Eudoros {
      * @param 	level	The logging level
      * @param   domain  Optional domain
      * @param 	args	Log payload
+     * @private
      */
     #logToFile = (level: $E.Level, domain?: string|null, ...args: $E.Payload[]): void => {
         if (!this.#options?.outputDirectory) {
