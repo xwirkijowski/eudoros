@@ -18,9 +18,10 @@ This utility comes with minimal defaults to ensure it works out of the box. When
 
 - Define custom log levels with configurable prefixes, handling options, formatting and processing (on log to file)
 - Supports various console methods (all valid methods: `log`, `info`, `error`, `warn`, `debug`)
-- Optional automatic formatting of payload arguments (numbers, dates, objects)
+- Fully customizable `Date` object handling with a preferred static method or custom formatting function
+- Optional automatic formatting of payload arguments (numbers, arrays, objects)
 - Optional console log grouping and exception trace insertion
-- Option to output logs to files with custom file naming (JSON format)
+- Option to output specific logs to separate files
 - Asynchronous logging using `process.nextTick()` to avoid blocking your main application
 - Comprehensive error handling and internal error reporting
 
@@ -140,7 +141,7 @@ Specified domain tag will also be included in the file logs (if enabled), making
 #### Method arguments
 
 | Argument  | Type | Description                                                                        |
-|-----------| --- |------------------------------------------------------------------------------------|
+|-----------|:---:|------------------------------------------------------------------------------------|
 | `level`   | `string` | The logging level to use (must match one of your defined levels).                  |
 | `domain`  | `string` | A string identifier for the component/module.                                      |
 | `...args` | `$E.Payload[]` | The logging payload (supports all the same formatting as regular logging methods). |
@@ -170,32 +171,33 @@ The Eudoros constructor accepts a `$E.Config` object with the following properti
 ### $E.Config
 
 | Property | Type | Description |
-| --- | --- | --- |
+| --- |:---:| --- |
 | `levels` | `Array<$E.Level>` | An array of logging level objects. |
 | `options` | `$E.Options` | Optional configuration options for the logging system. |
 
 ### $E.Options
 
 
-| Property | Type | Description |
-| --- | --- | --- |
-| `outputDirectory` | `string\|null` | Specifies the output directory for log files. If `null`, logging to files is disabled. |
-| `formatArgs` | `boolean` | Determines whether to apply formatting to payload arguments (e.g., coloring Date instances, numbers, objects). |
+| Property |          Type           | Default      | Description                                                                                                                                                         |
+| --- |:-----------------------:|--------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `outputDirectory` |     `string\|false`     | `'./logs'`   | Specifies the output directory for log files. If `false`, logging to files is disabled.                                                                             |
+| `formatArgs` |        `boolean`        | `true`       | Determines whether to apply formatting to payload arguments (e.g., coloring Date instances, numbers, objects).                                                      |
+| `formatDate` | `string\|$E.FormatDate` | `toISOString` | Determines which [`Date` method](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date#static_methods) to use when handling dates, or a defines a custom function to handle the formatting instead (see [$E.FormatDate](#eformatdate)). |
 
 ### $E.Level
 
 The logging level interface. 
 
-| Property | Type | Description                                                                                                                                                                                                                                                       |
-| --- | --- |-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `label` | `string` | The name of the logging level and the only required variable.                                                                                                                                                                                                     |
-| `prefix` | `string` | The prefix that appears at the start of the log message in the console.                                                                                                                                                                                           |
-| `format` | `[string, string]\|[string, string, string, string]` | The formatting of the timestamp and domain elements (ANSI bindings or extra characters).                                                                                                                                                                          |
+| Property | Type | Description                                                                                                                                                                                                                                                        |
+| --- |:---:|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `label` | `string` | The name of the logging level and the only required variable.                                                                                                                                                                                                      |
+| `prefix` | `string` | The prefix that appears at the start of the log message in the console.                                                                                                                                                                                            |
+| `format` | `[string, string]\|[string, string, string, string]` | The formatting of the timestamp and domain elements ([ANSI bindings](https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797) or extra characters).                                                                                                                                                                       |
 | `logToFile` | `boolean\|string` | Determines whether to output the log to a file.<br/><ul><li>If a string, it adds the value as a substring  to `log-<here>-{date}.txt` in the filename for this log level.</li><li>If `true` logs to main log file.</li><li>If `false` or unset disabled.</li></ul> |
-| `trace` | `$E.Trace` | Options for splitting the payload into message and trace, and grouping them together in separate `console` calls.                                                                                                                                                 |
-| `consoleMethodName` | `$E.ConsoleMethod` | The console method to use for this logging level (e.g., `console.log`, `console.error`). Defaults to `log`.                                                                                                                                                       |
-| `methodName` | `string` | The name of the method that will be created, defaults to `label`.                                                                                                                                                                                                 |
-| `formatToString` | `$E.formatToString` | A function that processes objects into a string with custom formatting, used only when logging to file.                                                                                                                                                           |
+| `trace` | `$E.Trace` | Options for splitting the payload into message and trace, and grouping them together in separate `console` calls.                                                                                                                                                  |
+| `consoleMethodName` | `$E.ConsoleMethod` | The [console method](https://developer.mozilla.org/en-US/docs/Web/API/console#instance_methods) to use for this logging level (e.g., `console.log`, `console.error`). Defaults to `log`.                                                                           |
+| `methodName` | `string` | The name of the method that will be created, defaults to `label`.                                                                                                                                                                                                  |
+| `formatToString` | `$E.formatToString` | A function that processes objects into a string with custom formatting, used only when logging to file.                                                                                                                                                            |
 
 ### $E.Trace
 > **Note:** When using the `trace` option, **the last argument in the logging method will always be removed from the payload**.
@@ -224,10 +226,10 @@ Options used to configure the grouped trace logging.
 ```
 
 
-### $E.formatToString
+### $E.FormatToString
 > **Note:** The `formatToString()` function is only called when writing to files, not for console output.
 ```typescript
-interface formatToString {
+interface FormatToString {
     (payload: Payload): string
 }
 ```
@@ -235,18 +237,34 @@ This function is especially useful when defining a special logging level for req
 
 It accesses the payload variables and prepares a string to be used on the `handleLog()` method, allowing your log to also display in a human-readable form in your application console.
 
-| Argument | Type | Description |
-| --- | --- | --- |
-| `payload` | `Payload` | The logging payload (array of arguments passed to log method) |
-| Returns | `string` | Formatted string to be written to the log file |
+| Argument | Type | Description                                                    |
+| --- |:---:|----------------------------------------------------------------|
+| `payload` | `Payload` | The logging payload (array of arguments passed to log method). |
+| Returns | `string` | Formatted string to be written to the log file.                |
 
-#### Example implementation:
-```typescript
-const formatToString: formatToString = (payload) => {
+#### Example implementation
+```js
+const formatToString = (payload) => {
     const [request] = payload; // Assuming first arg is request object
     return `${request.method} ${request.url} - ${request.status}`;
 }
 ```
+
+### $E.FormatDate
+> **Note:** The `formatDate()` function also processes the `Date` objects passed into the payload.
+
+```typescript
+interface FormatDate {
+    (date: Date): string
+}
+```
+This function allows more flexibility when handling dates, as it processes all `Date` objects.
+
+| Argument |   Type   | Description                                                  |
+|---------|:--------:|--------------------------------------------------------------|
+| `date`  |  `Date`  | The `Date` object to modify.                                 |
+| Returns | `string` | Formatted string to be used for all logging purposes. |
+
 
 ## Other Types
 
@@ -254,7 +272,7 @@ const formatToString: formatToString = (payload) => {
 This type represents the metadata header of each log entry when writing to files.
 
 | Property | Type | Description                                                      |
-| --- | --- |------------------------------------------------------------------|
+| --- |:---:|------------------------------------------------------------------|
 | `timestamp` | `string` | ISO timestamp of when the log was created.                       |
 | `level` | `string` | The logging level used (matches the level's label).              |
 | `domain` | `string\|undefined` | Optional domain tag if the log was created using `withDomain()`. |
@@ -262,23 +280,23 @@ This type represents the metadata header of each log entry when writing to files
 ### $E.FilePayload
 The complete log entry structure that gets written to files. Each line in the log file is a JSON string containing:
 
-| Property | Type | Description                                          |
-| --- | --- |------------------------------------------------------|
-| `...FilePayloadHead` | `FilePayloadHead` | All properties from `FilePayloadHead`.                 |
-| `args` | `Array<Payload>` | Array of all arguments passed to the logging method. |
+| Property |         Type         | Description                                          |
+| --- |:--------------------:|------------------------------------------------------|
+| `...FilePayloadHead` | `$E.FilePayloadHead` | All properties from `FilePayloadHead`.                 |
+| `args` |   `Array<Payload>`   | Array of all arguments passed to the logging method. |
 
 ### $E.Payload
 Represents the valid types that can be passed as logging arguments.
 
-| Type | Description | File Log Format | Console Format (when `formatArgs: true`) |
-| --- | --- | --- | --- |
-| `string` | Basic text messages | Raw string | Raw string |
-| `number` | Numeric values | Number | Yellow colored text |
-| `boolean` | Boolean values | Boolean | Raw boolean |
-| `object` | JavaScript objects | JSON string | Cyan colored JSON string |
+| Type | Description | File Log Format        | Console Format (when `formatArgs: true`) |
+| --- | --- |------------------------|------------------------------------|
+| `string` | Basic text messages | Raw string             | Raw string                         |
+| `number` | Numeric values | Number                 | Yellow colored text                |
+| `boolean` | Boolean values | Boolean                | Raw boolean                        |
+| `object` | JavaScript objects | JSON string            | Cyan colored JSON string           |
 | `Array<any>` | Arrays of any type | Comma-separated string | Green colored comma-separated list |
-| `Date` | Date instances | ISO string | Magenta colored ISO string |
-| `Error` | Error objects | Error toString() | Raw error (for stack traces) |
+| `Date` | Date instances | Formatted string       | Magenta colored string             |
+| `Error` | Error objects | Error toString()       | Raw error (for stack traces)       |
 
 ### $E.ConsoleMethod
 Valid console methods that can be used for logging.
@@ -302,7 +320,7 @@ Eudoros includes a built-in error reporting system that ensures logging failures
 5. Continue operation without interrupting the application
 
 For example, if writing to a log file fails, you'll see:
-```
+```shell
 [⚠] 2024-11-13T19:14:28.774Z Eudoros caught an exception.
     [>] Cannot write log to file!
     Error: EACCES: permission denied

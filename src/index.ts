@@ -8,16 +8,14 @@ declare namespace $E {
 
     interface Options {
         // Specify log file output directory, if null logging to files disabled
-        outputDirectory?: string|null,
+        outputDirectory?: string|false,
         // Weather to apply formatting to payload args (i.e. color Date instanced, numbers, objects)
         formatArgs?: boolean,
-        //createOutputDirectory?: boolean;
+        // The name of the method to use on the `Date` object or a function that returns the formatted date as a string
+        formatDate?: string|FormatDate
     }
 
     // The logging level object
-    /**
-     *
-     */
     interface Level {
         // The name of the logging level
         label: string,
@@ -38,7 +36,7 @@ declare namespace $E {
         // The name of the method that will be created, defaults to label
         methodName?: string,
         // A function that processes objects into a string with your own formatting, used only when logging to file.
-        formatToString?: formatToString
+        formatToString?: FormatToString
     }
 
     // Trace options
@@ -66,8 +64,13 @@ declare namespace $E {
     type Payload = string|number|boolean|object|Array<any>;
 
     // Function that translates objects passed as payload to a human-readable string
-    interface formatToString {
+    interface FormatToString {
         (payload: Payload): string
+    }
+
+    // Function that formats the `Date` object
+    interface FormatDate {
+        (date: Date): string
     }
 }
 
@@ -85,6 +88,7 @@ export class Eudoros {
     readonly #default_options = {
         outputDirectory: './logs',
         formatArgs: true,
+        formatDate: 'toISOString'
     };
 
     /**
@@ -97,10 +101,33 @@ export class Eudoros {
      * @private
      */
     readonly #internalErrorLog = (msg: string, err?: any) => {
-        console.group(`\x1b[31m[\u{26A0}]\x1b[0m`, `\x1b[31m${new Date().toISOString()}\x1b[0m`, 'Eudoros caught an exception.');
+        console.group(`\x1b[31m[\u{26A0}]\x1b[0m`, `\x1b[31m${this.#formatDate(new Date())}\x1b[0m`, 'Eudoros caught an exception.');
         console.error(`\x1b[31m[>]\x1b[0m`, msg);
         err && console.trace(err);
         console.groupEnd();
+    }
+
+    /**
+     * Format the `Date` object.
+     *
+     * @param   date    The `Date` object to format.
+     * @return  String
+     */
+    readonly #formatDate = (date: Date) => {
+        if (this.#options?.formatDate) {
+            try {
+                if (typeof this.#options.formatDate === 'function') {
+                    return this.#options.formatDate(date);
+                } else {
+                    return (date as any)[this.#options.formatDate]();
+                }
+            } catch (err) {
+                this.#internalErrorLog(`Error during date formatting!`, err)
+            }
+        } else {
+            this.#internalErrorLog(`Cannot format date, no config defined!`, date)
+            return date;
+        }
     }
 
     /**
@@ -166,7 +193,9 @@ export class Eudoros {
             const prefix: string = level.trace.groupPrefix || '';
             const label: string = level.trace.groupLabel || '';
             const format = (level.trace.format && Array.isArray(level.format) && level.trace.format.length > 0) ?  level.trace.format : ['', ''];
-            const timestamp = `${format[0]}${new Date().toISOString()}${format[1]}`;
+
+            // Format date
+            const timestamp = `${format[0]}${this.#formatDate(new Date())}${format[1]}`;
 
             if (domain) {
                 domain = `${format[0]}[${domain}]${format[1]}`;
@@ -188,7 +217,7 @@ export class Eudoros {
     #formatPayload = (level: $E.Level, domain?: string|null, ...args: $E.Payload[]): string => {
         const prefix: string = level.prefix || '';
         const format = (level.format && Array.isArray(level.format) && level.format.length > 0) ?  level.format : ['', ''];
-        const timestamp = `${format[0]}${new Date().toISOString()}${format[1]}`;
+        const timestamp = `${format[0]}${this.#formatDate(new Date())}${format[1]}`;
 
         const formatArgs: boolean = this.#options?.formatArgs??false;
 
@@ -218,8 +247,8 @@ export class Eudoros {
                             : arg.join(", ");
                     } else if (arg instanceof Date) { // Format Date instances
                         return formatArgs
-                            ? `\x1b[35m${arg.toISOString()}\x1b[0m`
-                            : arg.toISOString();
+                            ? `\x1b[35m${this.#formatDate(arg)}\x1b[0m`
+                            : this.#formatDate(arg);
                     } else if (arg instanceof Error) { // Do not format Errors
                         return arg;
                     } else if (typeof arg === 'object') { // Format standard objects
@@ -300,7 +329,7 @@ export class Eudoros {
             // Prepare message
 
             let lineHead: $E.FilePayloadHead = {
-                timestamp: date.toISOString(),
+                timestamp: this.#formatDate(date),
                 level: level.label
             }
 
