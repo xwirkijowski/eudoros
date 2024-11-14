@@ -280,23 +280,23 @@ This type represents the metadata header of each log entry when writing to files
 ### $E.FilePayload
 The complete log entry structure that gets written to files. Each line in the log file is a JSON string containing:
 
-| Property |         Type         | Description                                          |
-| --- |:--------------------:|------------------------------------------------------|
-| `...FilePayloadHead` | `$E.FilePayloadHead` | All properties from `FilePayloadHead`.                 |
-| `args` |   `Array<Payload>`   | Array of all arguments passed to the logging method. |
+| Property                |         Type         | Description                                          |
+|-------------------------|:--------------------:|------------------------------------------------------|
+| `...lineHead` | `$E.FilePayloadHead` | All properties from `$E.FilePayloadHead`.            |
+| `args`                  |   `Array<Payload>`   | Array of all arguments passed to the logging method. |
 
 ### $E.Payload
-Represents the valid types that can be passed as logging arguments.
+The payload is an array of arguments. The table below represents the valid types that can be passed as logging arguments and the way they are formatted.
 
-| Type | Description | File Log Format        | Console Format (when `formatArgs: true`) |
-| --- | --- |------------------------|------------------------------------|
-| `string` | Basic text messages | Raw string             | Raw string                         |
-| `number` | Numeric values | Number                 | Yellow colored text                |
-| `boolean` | Boolean values | Boolean                | Raw boolean                        |
-| `object` | JavaScript objects | JSON string            | Cyan colored JSON string           |
-| `Array<any>` | Arrays of any type | Comma-separated string | Green colored comma-separated list |
-| `Date` | Date instances | Formatted string       | Magenta colored string             |
-| `Error` | Error objects | Error toString()       | Raw error (for stack traces)       |
+| Type | File Log Format        | Console Format (when `formatArgs: true`) |
+| --- |------------------------|------------------------------------|
+| `string` | Raw string             | Raw string                         |
+| `number` | Number                 | Yellow colored text                |
+| `boolean` | Boolean                | Raw boolean                        |
+| `object` | JSON string            | Cyan colored JSON string           |
+| `Array<any>` | Comma-separated string | Green colored comma-separated list |
+| `Date` | Formatted string       | Magenta colored string             |
+| `Error` | Error toString()       | Raw error (for stack traces)       |
 
 ### $E.ConsoleMethod
 Valid console methods that can be used for logging.
