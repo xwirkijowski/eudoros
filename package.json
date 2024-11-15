@@ -1,6 +1,6 @@
 {
   "name": "eudoros",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "author": "Sebastian Wirkijowski",
   "description": "A small and simple logger with write-to-file support and dynamic log levels.",
   "license": "Apache-2.0",

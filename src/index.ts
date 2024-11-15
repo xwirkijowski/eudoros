@@ -9,10 +9,14 @@ declare namespace $E {
     interface Options {
         // Specify log file output directory, if null logging to files disabled
         outputDirectory?: string|false,
+        // Specify the file extension to use for the log files
+        outputFileExtension?: string,
         // Weather to apply formatting to payload args (i.e. color Date instanced, numbers, objects)
         formatArgs?: boolean,
         // The name of the method to use on the `Date` object or a function that returns the formatted date as a string
         formatDate?: string|FormatDate
+        // Enable or disable timestamps in console logs
+        consoleTimestamps?: boolean
     }
 
     // The logging level object
@@ -87,8 +91,10 @@ export class Eudoros {
     ];
     readonly #default_options = {
         outputDirectory: './logs',
+        outputFileExtension: 'log',
         formatArgs: true,
-        formatDate: 'toISOString'
+        formatDate: 'toISOString',
+        consoleTimestamps: true
     };
 
     /**
@@ -195,13 +201,13 @@ export class Eudoros {
             const format = (level.trace.format && Array.isArray(level.format) && level.trace.format.length > 0) ?  level.trace.format : ['', ''];
 
             // Format date
-            const timestamp = `${format[0]}${this.#formatDate(new Date())}${format[1]}`;
+            const timestamp = this.#options?.consoleTimestamps === false ? '' : `${format[0]}${this.#formatDate(new Date())}${format[1]} `;
 
             if (domain) {
                 domain = `${format[0]}[${domain}]${format[1]}`;
             }
 
-            return `${prefix?prefix+' ':''}${timestamp}${domain?` ${domain} `:' '}${label}`;
+            return `${prefix?prefix+' ':''}${timestamp}${domain?`${domain} `:''}${label}`;
         }
     }
 
@@ -217,7 +223,8 @@ export class Eudoros {
     #formatPayload = (level: $E.Level, domain?: string|null, ...args: $E.Payload[]): string => {
         const prefix: string = level.prefix || '';
         const format = (level.format && Array.isArray(level.format) && level.format.length > 0) ?  level.format : ['', ''];
-        const timestamp = `${format[0]}${this.#formatDate(new Date())}${format[1]}`;
+
+        const timestamp = this.#options?.consoleTimestamps === false ? '' : `${format[0]}${this.#formatDate(new Date())}${format[1]} `;
 
         const formatArgs: boolean = this.#options?.formatArgs??false;
 
@@ -266,7 +273,7 @@ export class Eudoros {
             domain = `${format[0]}[${domain}]${format[1]}`;
         }
 
-        return (level.trace) ? `${prefix?prefix+' ':''}${payload}` : `${prefix?prefix+' ':''}${timestamp}${domain?` ${domain} `:' '}${format[2]||''}${payload}${format[3]||''}`;
+        return (level.trace) ? `${prefix?prefix+' ':''}${payload}` : `${prefix?prefix+' ':''}${timestamp}${domain?`${domain} `:''}${format[2]||''}${payload}${format[3]||''}`;
     }
 
     /**
@@ -344,7 +351,7 @@ export class Eudoros {
                 ? `${level.label}-log-${dateString}`
                 : `log-${dateString}`;
 
-            fs.appendFile(`${this.#options.outputDirectory}/${fileName}.txt`, line+'\r\n', { flag: 'a+' }, err => {
+            fs.appendFile(`${this.#options.outputDirectory}/${fileName}.${this.#options.outputFileExtension}`, line+'\r\n', { flag: 'a+' }, err => {
                 if (err) this.#internalErrorLog(`Cannot write log to file!`, err);
             })
         }

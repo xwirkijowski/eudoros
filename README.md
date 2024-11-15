@@ -48,6 +48,7 @@ const logger = new Eudoros({
   ],
   options: {
     outputDirectory: './logs',
+    outputFileExtension: 'log',
     formatArgs: true,
   },
 });
@@ -158,7 +159,10 @@ const default_levels = [{
 // Default options
 const default_options = {
     outputDirectory: './logs',
-    formatArgs: true
+    outputFileExtension: 'log',
+    formatArgs: true,
+    formatDate: 'toISOString',
+    consoleTimestamps: true
 };
 ```
 
@@ -177,12 +181,13 @@ The Eudoros constructor accepts a `$E.Config` object with the following properti
 
 ### $E.Options
 
-
-| Property |          Type           | Default      | Description                                                                                                                                                         |
-| --- |:-----------------------:|--------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `outputDirectory` |     `string\|false`     | `'./logs'`   | Specifies the output directory for log files. If `false`, logging to files is disabled.                                                                             |
-| `formatArgs` |        `boolean`        | `true`       | Determines whether to apply formatting to payload arguments (e.g., coloring Date instances, numbers, objects).                                                      |
+| Property |          Type           | Default       | Description                                                                                                                                                         |
+| --- |:-----------------------:|---------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `outputDirectory` |     `string\|false`     | `'./logs'`    | Specifies the output directory for log files. If `false`, logging to files is disabled.                                                                             |
+| `outputFileExtension` |        `string`         | `log`         | Specifies the file extension to use for the log files.                                                                             |
+| `formatArgs` |        `boolean`        | `true`        | Determines whether to apply formatting to payload arguments (e.g., coloring Date instances, numbers, objects).                                                      |
 | `formatDate` | `string\|$E.FormatDate` | `toISOString` | Determines which [`Date` method](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date#static_methods) to use when handling dates, or a defines a custom function to handle the formatting instead (see [$E.FormatDate](#eformatdate)). |
+| `consoleTimestamps` |        `boolean`        | `true`        | Enable or disable timestamps in console logs. |
 
 ### $E.Level
 
