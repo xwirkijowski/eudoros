@@ -6,20 +6,8 @@ on:
       - v[0-9]+.[0-9]+.[0-9]+
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "Build job triggered by ${{ github.event_name }} event, branch ${{ github.ref }}"
-      - name: Checkout
-        uses: actions/checkout@v4
-      - run: echo "[>] Cloned repository to runner"
-      - run: echo "[>] Installing packages"
-      - run: npm install
-      - run: echo "[>] Running build script"
-      - run: npm run build
   publish:
     runs-on: ubuntu-latest
-    needs: build
     steps:
       - run: echo "Publish job triggered by ${{ github.event_name }} event, branch ${{ github.ref }}"
       - name: Checkout
@@ -38,9 +26,3 @@ jobs:
         uses: JS-DevTools/npm-publish@v3
         with:
           token: ${{ secrets.NPM_EUDOROS }}
-      - run: echo "[>] Publishing to GitHub Package Registry"
-      - name: "Publish to GitHub Package Registry"
-        uses: JS-DevTools/npm-publish@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          registry: "https://npm.pkg.github.com"
