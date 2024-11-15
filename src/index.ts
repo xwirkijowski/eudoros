@@ -39,6 +39,8 @@ declare namespace $E {
         trace?: Trace,
         // Which console method to use for this level (e.g. console.<log>, console.<error>)
         consoleMethodName?: ConsoleMethod,
+        // Override configuration level console timestamp settings
+        consoleTimestamps?: boolean
         // The name of the method that will be created, defaults to label
         methodName?: string,
         // A function that processes objects into a string with your own formatting, used only when logging to file.
@@ -211,8 +213,10 @@ export class Eudoros {
             const label: string = level.trace.groupLabel || '';
             const format = (level.trace.format && Array.isArray(level.format) && level.trace.format.length > 0) ?  level.trace.format : ['', ''];
 
+            const withTimestamp: boolean = (level?.consoleTimestamps !== undefined) ? level.consoleTimestamps : this.#options?.consoleTimestamps as boolean;
+
             // Format date
-            const timestamp = this.#options?.consoleTimestamps === false ? '' : `${format[0]}${this.#formatDate(new Date())}${format[1]} `;
+            const timestamp = withTimestamp ? `${format[0]}${this.#formatDate(new Date())}${format[1]} ` : '';
 
             if (domain) {
                 domain = `${format[0]}[${domain}]${format[1]}`;
@@ -235,7 +239,8 @@ export class Eudoros {
         const prefix: string = level.prefix || '';
         const format = (level.format && Array.isArray(level.format) && level.format.length > 0) ?  level.format : ['', ''];
 
-        const timestamp = this.#options?.consoleTimestamps === false ? '' : `${format[0]}${this.#formatDate(new Date())}${format[1]} `;
+        const withTimestamp: boolean = (level?.consoleTimestamps !== undefined) ? level.consoleTimestamps : this.#options?.consoleTimestamps as boolean;
+        const timestamp = withTimestamp ? `${format[0]}${this.#formatDate(new Date())}${format[1]} ` : '';
 
         const formatArgs: boolean = this.#options?.formatArgs??false;
 
