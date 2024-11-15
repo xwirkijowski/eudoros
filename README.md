@@ -23,6 +23,7 @@ This utility comes with minimal defaults to ensure it works out of the box. When
 - Optional console log grouping and exception trace insertion
 - Option to output specific logs to separate files
 - Asynchronous logging using `process.nextTick()` to avoid blocking your main application
+- **(new)** Synchronous mode available! Just add `synchronous: true` to the configuration
 - Comprehensive error handling and internal error reporting
 
 ## Installation
@@ -133,11 +134,12 @@ logger.withDomain('warn', 'UserService', 'Duplicate email detected', email);
 logger.withDomain('info', 'PaymentService', 'Processing payment', orderId);
 logger.withDomain('error', 'PaymentService', 'Payment failed', orderId, error);
 ```
-The `withDomain()` method provides an alternative way to log messages with an additional domain tag that appears after the timestamp. This is useful for distinguishing logs from different components or modules in your application.
+The `withDomain` method provides an alternative way to log messages with an additional domain tag that appears after the timestamp. This is useful for distinguishing logs from different components or modules in your application.
 
 Specified domain tag will also be included in the file logs (if enabled), making them easier to filter and analyze.
 
-> When using `withDomain()`, the domain tag is formatted using the same format array as defined in your level configuration.
+> [!NOTE]
+> When using `withDomain`, the domain tag is formatted using the same format array as defined in your level configuration.
 
 #### Method arguments
 
@@ -181,13 +183,14 @@ The Eudoros constructor accepts a `$E.Config` object with the following properti
 
 ### $E.Options
 
-| Property |          Type           | Default       | Description                                                                                                                                                         |
-| --- |:-----------------------:|---------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `outputDirectory` |     `string\|false`     | `'./logs'`    | Specifies the output directory for log files. If `false`, logging to files is disabled.                                                                             |
-| `outputFileExtension` |        `string`         | `log`         | Specifies the file extension to use for the log files.                                                                             |
-| `formatArgs` |        `boolean`        | `true`        | Determines whether to apply formatting to payload arguments (e.g., coloring Date instances, numbers, objects).                                                      |
-| `formatDate` | `string\|$E.FormatDate` | `toISOString` | Determines which [`Date` method](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date#static_methods) to use when handling dates, or a defines a custom function to handle the formatting instead (see [$E.FormatDate](#eformatdate)). |
-| `consoleTimestamps` |        `boolean`        | `true`        | Enable or disable timestamps in console logs. |
+| Property              |          Type           | Default       | Description                                                                                                                                                                                                                                                             |
+|-----------------------|:-----------------------:|---------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `synchronous`         |        `boolean`        | `false`       | Whether to switch to synchronous mode, default `false`. This changes the behavior of the internal `initLevels` and `handleLog` functions.                                                                                                                                        |
+| `outputDirectory`     |     `string\|false`     | `'./logs'`    | Specifies the output directory for log files. If `false`, logging to files is disabled.                                                                                                                                                                                 |
+| `outputFileExtension` |        `string`         | `log`         | Specifies the file extension to use for the log files.                                                                                                                                                                                                                  |
+| `formatArgs`          |        `boolean`        | `true`        | Determines whether to apply formatting to payload arguments (e.g., coloring Date instances, numbers, objects).                                                                                                                                                          |
+| `formatDate`          | `string\|$E.FormatDate` | `toISOString` | Determines which [`Date` method](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date#static_methods) to use when handling dates, or a defines a custom function to handle the formatting instead (see [$E.FormatDate](#eformatdate)). |
+| `consoleTimestamps`   |        `boolean`        | `true`        | Enable or disable timestamps in console logs.                                                                                                                                                                                                                           |
 
 ### $E.Level
 
@@ -205,7 +208,8 @@ The logging level interface.
 | `formatToString` | `$E.formatToString` | A function that processes objects into a string with custom formatting, used only when logging to file.                                                                                                                                                            |
 
 ### $E.Trace
-> **Note:** When using the `trace` option, **the last argument in the logging method will always be removed from the payload**.
+> [!IMPORTANT]
+> When using the `trace` option, **the last argument in the logging method will always be removed from the payload**.
 It will be used in a subsequent `console.trace()` call if it's not `undefined`, `null` or otherwise falsy.
 
 Options used to configure the grouped trace logging.
@@ -232,7 +236,8 @@ Options used to configure the grouped trace logging.
 
 
 ### $E.FormatToString
-> **Note:** The `formatToString()` function is only called when writing to files, not for console output.
+> [!NOTE]
+> The `formatToString` function is only called when writing to files, not for console output.
 ```typescript
 interface FormatToString {
     (payload: Payload): string
@@ -240,7 +245,7 @@ interface FormatToString {
 ```
 This function is especially useful when defining a special logging level for requests or auditing purposes, where usually we directly pass variables with objects or arrays in a specific order for file logging purposes.
 
-It accesses the payload variables and prepares a string to be used on the `handleLog()` method, allowing your log to also display in a human-readable form in your application console.
+It accesses the payload variables and prepares a string to be used on the `handleLog` method, allowing your log to also display in a human-readable form in your application console.
 
 | Argument | Type | Description                                                    |
 | --- |:---:|----------------------------------------------------------------|
@@ -256,7 +261,8 @@ const formatToString = (payload) => {
 ```
 
 ### $E.FormatDate
-> **Note:** The `formatDate()` function also processes the `Date` objects passed into the payload.
+> [!NOTE]
+> The `formatDate` function also processes the `Date` objects passed into the payload.
 
 ```typescript
 interface FormatDate {
@@ -276,11 +282,11 @@ This function allows more flexibility when handling dates, as it processes all `
 ### $E.FilePayloadHead
 This type represents the metadata header of each log entry when writing to files.
 
-| Property | Type | Description                                                      |
-| --- |:---:|------------------------------------------------------------------|
-| `timestamp` | `string` | ISO timestamp of when the log was created.                       |
-| `level` | `string` | The logging level used (matches the level's label).              |
-| `domain` | `string\|undefined` | Optional domain tag if the log was created using `withDomain()`. |
+| Property | Type | Description                                                    |
+| --- |:---:|----------------------------------------------------------------|
+| `timestamp` | `string` | ISO timestamp of when the log was created.                     |
+| `level` | `string` | The logging level used (matches the level's label).            |
+| `domain` | `string\|undefined` | Optional domain tag if the log was created using `withDomain`. |
 
 ### $E.FilePayload
 The complete log entry structure that gets written to files. Each line in the log file is a JSON string containing:
@@ -301,7 +307,7 @@ The payload is an array of arguments. The table below represents the valid types
 | `object` | JSON string            | Cyan colored JSON string           |
 | `Array<any>` | Comma-separated string | Green colored comma-separated list |
 | `Date` | Formatted string       | Magenta colored string             |
-| `Error` | Error toString()       | Raw error (for stack traces)       |
+| `Error` | Error `toString()`       | Raw error (for stack traces)       |
 
 ### $E.ConsoleMethod
 Valid console methods that can be used for logging.

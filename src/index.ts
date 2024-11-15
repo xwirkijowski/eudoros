@@ -7,11 +7,13 @@ declare namespace $E {
     }
 
     interface Options {
+        // Whether to switch to synchronous mode, default false
+        synchronous?: boolean,
         // Specify log file output directory, if null logging to files disabled
         outputDirectory?: string|false,
         // Specify the file extension to use for the log files
         outputFileExtension?: string,
-        // Weather to apply formatting to payload args (i.e. color Date instanced, numbers, objects)
+        // Whether to apply formatting to payload args (i.e. color Date instanced, numbers, objects)
         formatArgs?: boolean,
         // The name of the method to use on the `Date` object or a function that returns the formatted date as a string
         formatDate?: string|FormatDate
@@ -90,6 +92,7 @@ export class Eudoros {
         }
     ];
     readonly #default_options = {
+        synchronous: false,
         outputDirectory: './logs',
         outputFileExtension: 'log',
         formatArgs: true,
@@ -173,11 +176,19 @@ export class Eudoros {
                 ? level.methodName.toLowerCase()
                 : level.label.toLowerCase();
 
-            (this as any)[methodName] = async (...args: $E.Payload[]) => {
-                // Fire and forget - don't block
-                this.#handleLog(level, undefined, ...args).catch(err => {
-                    this.#internalErrorLog(`Error during log handling \`${level.label}\`!`, err)
-                });
+            if (this.#options?.synchronous === false) { // Async mode
+                (this as any)[methodName] = async (...args: $E.Payload[]) => {
+                    // Fire and forget - don't block
+                    this.#handleLog(level, undefined, ...args).catch(err => {
+                        this.#internalErrorLog(`Error during log handling \`${level.label}\`!`, err)
+                    });
+                }
+            } else { // Sync mode
+                (this as any)[methodName] = (...args: $E.Payload[]) => {
+                    this.#handleLog(level, undefined, ...args).catch(err => {
+                        this.#internalErrorLog(`Error during log handling \`${level.label}\`!`, err)
+                    });
+                }
             }
         })
     }
@@ -299,10 +310,9 @@ export class Eudoros {
             consoleMethod = this.#default_method;
         }
 
-        // Run as soon as possible, do not block current operations
-        process.nextTick(() => {
+        // Prepare payload
+        const send = () => {
             const trace = args[args.length - 1];
-
             if (level.trace) {
                 console.group(this.#formatGroup(level, domain));
                 console[consoleMethod as $E.ConsoleMethod](message);
@@ -311,7 +321,16 @@ export class Eudoros {
             } else {
                 console[consoleMethod as $E.ConsoleMethod](message);
             }
-        });
+        }
+
+        if (this.#options?.synchronous === false) { // Async mode
+            // Run as soon as possible, do not block current operations
+            process.nextTick(() => {
+                send();
+            });
+        } else { // Sync mode
+            send()
+        }
 
         if (level.logToFile && this.#options?.outputDirectory) this.#logToFile(level, null, ...args);
     }
