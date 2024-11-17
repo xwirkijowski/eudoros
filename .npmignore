@@ -16,10 +16,6 @@ pids
 *.seed
 *.pid.lock
 
-# Dependency directories
-node_modules/
-jspm_packages/
-
 # Optional npm cache directory
 .npm
 
@@ -34,14 +30,10 @@ jspm_packages/
 .yarn/install-state.gz
 .pnp.*
 
-# Intellij
-.idea
-
-# Other
-package-lock.json
-
-# Source
+#Directories
+.github/
+.idea/
 src/
-
-# Test
 test/
+node_modules/
+jspm_packages/

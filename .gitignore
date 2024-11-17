@@ -35,10 +35,8 @@ jspm_packages/
 .pnp.*
 
 # Intellij
-.idea
+.idea/
+dist/
 
 # Other
 package-lock.json
-
-# Distribution
-dist/
