@@ -5,6 +5,19 @@
   "description": "A small and simple logger with write-to-file support and dynamic log levels.",
   "license": "Apache-2.0",
   "homepage": "https://github.com/xwirkijowski/eudoros#readme",
+  "keywords": [
+    "logger",
+    "log",
+    "logfile",
+    "console",
+    "terminal",
+    "formatting",
+    "ansi",
+    "style",
+    "typescript",
+    "async",
+    "sync"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/xwirkijowski/eudoros.git"
