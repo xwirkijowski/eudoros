@@ -1,3 +1,9 @@
+/**
+ * Eudoros - Flexible Logging Utility
+ *
+ * @author  Sebastian Wirkijowski <sebastian@wirkijowski.me>
+ */
+
 import * as fs from 'node:fs';
 
 declare namespace $E {
@@ -104,11 +110,10 @@ export class Eudoros {
 
     /**
      * Internal error reporting.
-     *
      * If an exception is caught inside the logger, this function will handle it and display all details.
      *
-     * @param       msg     Descriptive error message
-     * @param       err     The error object
+     * @param   {string}    msg     - Descriptive error message
+     * @param   {any}       err     - The error object
      * @private
      */
     readonly #internalErrorLog = (msg: string, err?: any) => {
@@ -121,17 +126,15 @@ export class Eudoros {
     /**
      * Format the `Date` object.
      *
-     * @param   date    The `Date` object to format.
+     * @param   {Date}  date    - The `Date` object to format.
      * @return  String
      */
     readonly #formatDate = (date: Date) => {
         if (this.#options?.formatDate) {
             try {
-                if (typeof this.#options.formatDate === 'function') {
-                    return this.#options.formatDate(date);
-                } else {
-                    return (date as any)[this.#options.formatDate]();
-                }
+                return (typeof this.#options.formatDate === 'function')
+                    ? this.#options.formatDate(date)
+                    : (date as any)[this.#options.formatDate]();
             } catch (err) {
                 this.#internalErrorLog(`Error during date formatting!`, err)
             }
@@ -143,7 +146,8 @@ export class Eudoros {
 
     /**
      * Check if the provided `console` method is valid and supported.
-     * @param   consoleMethod   The `console` method
+     *
+     * @param   {string}    consoleMethod   - The `console` method
      */
     isValidMethod = (consoleMethod: string): consoleMethod is $E.ConsoleMethod => {
         return ['log', 'info', 'error', 'warn', 'debug'].includes(consoleMethod);
@@ -156,12 +160,14 @@ export class Eudoros {
      */
     constructor (config: $E.Config) {
         if (config) {
-            this.#levels = config.levels || this.#default_levels; // Assign levels
+            this.#levels = config?.levels || this.#default_levels; // Assign levels
 
-            // If options defined, join defaults and defined options by spread, last overwrites
-            if (config.options) this.#options = {...this.#default_options, ...config.options};
+            // If options defined, join defaults and defined options by spread, last overwrites, else use defaults.
+            this.#options = (config.options)
+                ? {...this.#default_options, ...config.options}
+                : this.#default_options;
 
-            this.#initLevels(); // Set up dynamic methods
+            this.#initLevels(); // Generate methods
 
             return this;
         }
@@ -180,7 +186,6 @@ export class Eudoros {
 
             if (this.#options?.synchronous === false) { // Async mode
                 (this as any)[methodName] = async (...args: $E.Payload[]) => {
-                    // Fire and forget - don't block
                     this.#handleLog(level, undefined, ...args).catch(err => {
                         this.#internalErrorLog(`Error during log handling \`${level.label}\`!`, err)
                     });
@@ -200,29 +205,33 @@ export class Eudoros {
      * Everything is turned into a single string.
      * There are no user supplied arguments (payload) here, except for the `domain`.
      *
-     * @param    level    The logging level
-     * @param    domain    Optional domain (extra tag after timestamp)
+     * @param   {$E.Level}      level       - The logging level
+     * @param   {string|null}   [domain=''] - Optional domain (extra tag after timestamp)
      * @private
      */
     #formatGroup = (level: $E.Level, domain?: string|null): string => {
         if (!level.trace) {
             this.#internalErrorLog(`Cannot format trace on \`${level.label}\`, no trace config defined!`)
-            return `<Format group error!>`;
+            return "<Format group error!>";
         } else {
-            const prefix: string = level.trace.groupPrefix || '';
+            const prefix: string = level.trace.groupPrefix + " " || '';
             const label: string = level.trace.groupLabel || '';
-            const format = (level.trace.format && Array.isArray(level.format) && level.trace.format.length > 0) ?  level.trace.format : ['', ''];
+            const format: string[] = (level.trace.format && Array.isArray(level.format) && level.trace.format.length > 0)
+                ?  level.trace.format
+                : ['', ''];
 
-            const withTimestamp: boolean = (level?.consoleTimestamps !== undefined) ? level.consoleTimestamps : this.#options?.consoleTimestamps as boolean;
+            const withTimestamp: boolean = (level?.consoleTimestamps !== undefined)
+                ? level.consoleTimestamps
+                : this.#options?.consoleTimestamps as boolean;
+            const timestamp: string = withTimestamp ?
+                `${format[0]}${this.#formatDate(new Date())}${format[1]}` + " "
+                : '';
 
-            // Format date
-            const timestamp = withTimestamp ? `${format[0]}${this.#formatDate(new Date())}${format[1]} ` : '';
+            domain = (domain)
+                ? `${format[0]}[${domain}]${format[1]}` + " "
+                : '';
 
-            if (domain) {
-                domain = `${format[0]}[${domain}]${format[1]}`;
-            }
-
-            return `${prefix?prefix+' ':''}${timestamp}${domain?`${domain} `:''}${label}`;
+            return prefix+timestamp+domain+label;
         }
     }
 
@@ -230,19 +239,25 @@ export class Eudoros {
      * Apply user defined log level formatting and prepare the payload itself.
      * All `args` are turned into a single string, objects undergo `JSON.stringify`.
      *
-     * @param 	level	The logging level
-     * @param	domain	Optional domain (extra tag after timestamp)
-     * @param 	args	Log payload
+     * @param   {$E.Level}      level       - The logging level
+     * @param   {string|null}   [domain]    - Optional domain (extra tag after timestamp)
+     * @param   {$E.Payload[]}  args        - Log payload
      * @private
      */
     #formatPayload = (level: $E.Level, domain?: string|null, ...args: $E.Payload[]): string => {
         const prefix: string = level.prefix || '';
-        const format = (level.format && Array.isArray(level.format) && level.format.length > 0) ?  level.format : ['', ''];
+        const format = (level.format && Array.isArray(level.format) && level.format.length > 0)
+            ?  level.format
+            : ['', ''];
 
-        const withTimestamp: boolean = (level?.consoleTimestamps !== undefined) ? level.consoleTimestamps : this.#options?.consoleTimestamps as boolean;
-        const timestamp = withTimestamp ? `${format[0]}${this.#formatDate(new Date())}${format[1]} ` : '';
+        const withTimestamp: boolean = (level?.consoleTimestamps !== undefined)
+            ? level.consoleTimestamps
+            : this.#options?.consoleTimestamps as boolean;
+        const timestamp = withTimestamp
+            ? `${format[0]}${this.#formatDate(new Date())}${format[1]}` + ""
+            : '';
 
-        const formatArgs: boolean = this.#options?.formatArgs??false;
+        const formatArgs: boolean = this.#options?.formatArgs ?? false;
 
         let payload: $E.Payload[]|$E.Payload = args;
 
@@ -297,9 +312,9 @@ export class Eudoros {
      * If level has file logging enabled, call the file logging method.
      * File logging method uses its own format.
      *
-     * @param	level	The logging level
-     * @param	domain	Optional domain (extra tag after timestamp)
-     * @param 	args	Log payload
+     * @param   {$E.Level}      level       - The logging level
+     * @param   {string|null}   [domain]    - Optional domain (extra tag after timestamp)
+     * @param   {$E.Payload[]}  args        - Log payload
      * @private
      */
     #handleLog = async (level: $E.Level, domain?: string|null, ...args: $E.Payload[]): Promise<void> => {
@@ -344,9 +359,9 @@ export class Eudoros {
      * Prepare the log payload for file logging.
      * File logs are saved as a JSON string to make them easier to plug into Grafana.
      *
-     * @param 	level	The logging level
-     * @param   domain  Optional domain
-     * @param 	args	Log payload
+     * @param   {$E.Level}      level       - The logging level
+     * @param   {string|null}   [domain]    - Optional domain (extra tag after timestamp)
+     * @param   {$E.Payload[]}  args        - Log payload
      * @private
      */
     #logToFile = (level: $E.Level, domain?: string|null, ...args: $E.Payload[]): void => {
@@ -356,8 +371,6 @@ export class Eudoros {
             const date = new Date();
             // Build date substring for file name, add padded zeros to month and date
             const dateString = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-
-            // Prepare message
 
             let lineHead: $E.FilePayloadHead = {
                 timestamp: this.#formatDate(date),
@@ -385,9 +398,9 @@ export class Eudoros {
     /**
      * Alternative to dynamically generated methods, includes an extra tag (domain) in the log.
      *
-     * @param	level	The logging level
-     * @param	domain	Optional domain (extra tag after timestamp)
-     * @param 	args	Log payload
+     * @param	{string}        level	- The logging level
+     * @param	{string}        domain	- Domain (extra tag after timestamp)
+     * @param 	{$E.Payload[]}  args	- Log payload
      */
     withDomain = (level: string, domain: string, ...args: $E.Payload[]): void => {
         const levelObject = this.#levels.find(obj => obj?.label === level);
@@ -400,6 +413,8 @@ export class Eudoros {
 
 /**
  *  Alternative to `new Eudoros(config)`.
+ *
+ *  @constructor
  */
 export class EudorosBuilder {
     levels: $E.Level[] = []
@@ -427,7 +442,8 @@ export class EudorosBuilder {
 /**
  * Alternative to `new Eudoros(config)`.
  *
- * @param   config  Configuration object with log levels and options.
+ * @param   config  - Configuration object with log levels and options.
+ * @constructor
  */
 export const init = (config: $E.Config) => {
     return new Eudoros(config)
