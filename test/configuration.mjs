@@ -1,6 +1,8 @@
 export default {
 	options: {
-		outputDirectory: './logs'
+		outputDirectory: './logs',
+		sync: false,
+		consoleTimestamps: true
 	},
 	levels: [
 		{ // Critical errors that cause performance degradation or shutdown
@@ -9,6 +11,7 @@ export default {
 			format: ['\x1b[31m', '\x1b[0m'], // Bold, red
 			logToFile: true,
 			consoleMethodName: 'error',
+			consoleTimestamps: false,
 			trace: {
 				groupLabel: 'Critical error encountered.',
 				groupPrefix: '\x1b[31m[\u{26A0}]\x1b[0m',

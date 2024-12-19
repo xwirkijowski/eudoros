@@ -4,6 +4,8 @@
 
 A powerful and customizable logging library for Node.js, with support for custom log levels, formatting, and file logging.
 
+[FILE OUTDATED]
+
 ## Overview
 
 Eudoros is a robust and flexible logging utility for Node.js applications. It allows you to define custom logging levels with configurable prefixes, formatting, and file logging capabilities. The library is designed to be highly extensible and easy to integrate into your project.
