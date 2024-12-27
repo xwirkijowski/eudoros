@@ -6,96 +6,94 @@
 
 import * as fs from 'node:fs';
 
-declare namespace $E {
-    interface Config {
-        levels: Array<Level>,
-        options?: Options
-    }
+interface Config {
+    levels: Array<Level>,
+    options?: Options
+}
 
-    interface Options {
-        // Whether to switch to synchronous mode, default false
-        synchronous?: boolean,
-        // Specify log file output directory, if null logging to files disabled
-        outputDirectory?: string|false,
-        // Specify the file extension to use for the log files
-        outputFileExtension?: string,
-        // Whether to apply formatting to payload args (i.e. color Date instanced, numbers, objects)
-        formatArgs?: boolean,
-        // The name of the method to use on the `Date` object or a function that returns the formatted date as a string
-        formatDate?: ValidDateToStringMethod|FormatDateFunction
-        // Enable or disable timestamps in console logs
-        consoleTimestamps?: boolean
-    }
+interface Options {
+    // Whether to switch to synchronous mode, default false
+    synchronous?: boolean,
+    // Specify log file output directory, if null logging to files disabled
+    outputDirectory?: string|false,
+    // Specify the file extension to use for the log files
+    outputFileExtension?: string,
+    // Whether to apply formatting to payload args (i.e. color Date instanced, numbers, objects)
+    formatArgs?: boolean,
+    // The name of the method to use on the `Date` object or a function that returns the formatted date as a string
+    formatDate?: ValidDateToStringMethod|FormatDateFunction
+    // Enable or disable timestamps in console logs
+    consoleTimestamps?: boolean
+}
 
-    // The logging level object
-    interface Level {
-        // The name of the logging level
-        label: string,
-        // Prefix that appears at the start of the log message in console
-        prefix?: string,
-        // Formatting of the timestamp and domain elements (ANSI bindings or extra characters)
-        format?: [string, string]|[string, string, string, string]
-        // True to output to file, string to specify a suffix to `log-<>` in the filename for this log level
-        logToFile?: boolean|string,
-        /**
-         * Enabling this option will split payload into message and trace, and group them together.
-         * All arguments will be in the first message, the last argument will always be removed from payload.
-         * If the last argument is null or undefined, no `console.trace` call will be sent.
-         */
-        trace?: Trace,
-        // Which console method to use for this level (e.g. console.<log>, console.<error>)
-        consoleMethodName?: ConsoleMethod,
-        // Override configuration level console timestamp settings
-        consoleTimestamps?: boolean
-        // The name of the method that will be created, defaults to label
-        methodName?: string,
-        // A function that processes objects into a string with your own formatting, used only when logging to file.
-        formatToString?: FormatToStringFunction
-    }
+// The logging level object
+interface Level {
+    // The name of the logging level
+    label: string,
+    // Prefix that appears at the start of the log message in console
+    prefix?: string,
+    // Formatting of the timestamp and domain elements (ANSI bindings or extra characters)
+    format?: [string, string]|[string, string, string, string]
+    // True to output to file, string to specify a suffix to `log-<>` in the filename for this log level
+    logToFile?: boolean|string,
+    /**
+     * Enabling this option will split payload into message and trace, and group them together.
+     * All arguments will be in the first message, the last argument will always be removed from payload.
+     * If the last argument is null or undefined, no `console.trace` call will be sent.
+     */
+    trace?: Trace,
+    // Which console method to use for this level (e.g. console.<log>, console.<error>)
+    consoleMethodName?: ConsoleMethod,
+    // Override configuration level console timestamp settings
+    consoleTimestamps?: boolean
+    // The name of the method that will be created, defaults to label
+    methodName?: string,
+    // A function that processes objects into a string with your own formatting, used only when logging to file.
+    formatToString?: FormatToStringFunction
+}
 
-    // Trace options
-    interface Trace {
-        // The label passed into `console.group()`
-        groupLabel?: string
-        groupPrefix?: string,
-        format?: [string, string]
-    }
+// Trace options
+interface Trace {
+    // The label passed into `console.group()`
+    groupLabel?: string
+    groupPrefix?: string,
+    format?: [string, string]
+}
 
-    // Logging methods accepted by `console`
-    type ConsoleMethod = 'log'|'info'|'error'|'warn'|'debug';
+// Logging methods accepted by `console`
+type ConsoleMethod = 'log'|'info'|'error'|'warn'|'debug';
 
-    // Valid formatting methods for Date
-    type ValidDateToStringMethod = {
-        [Key in keyof Date]: Date[Key] extends (this: Date) => string ? Key : never
-    }[keyof Date]
+// Valid formatting methods for Date
+type ValidDateToStringMethod = {
+    [Key in keyof Date]: Date[Key] extends (this: Date) => string ? Key : never
+}[keyof Date]
 
-    // Head of the log with information set at the time of insertion (not from payload)
-    type FilePayloadHead = {
-        timestamp: string,
-        level: string,
-        domain?: string,
-    }
+// Head of the log with information set at the time of insertion (not from payload)
+type FilePayloadHead = {
+    timestamp: string,
+    level: string,
+    domain?: string,
+}
 
-    // Stringified log to be inserted to log file
-    type FilePayload = string;
+// Stringified log to be inserted to log file
+type FilePayload = string;
 
-    // The logging payload - what is passed to the console method
-    type Payload = string|number|boolean|object|Array<string|number|boolean|object>;
+// The logging payload - what is passed to the console method
+type Payload = string|number|boolean|object|Array<string|number|boolean|object>;
 
-    // Function that translates objects passed as payload to a human-readable string
-    interface FormatToStringFunction {
-        (payload: Payload): string
-    }
+// Function that translates objects passed as payload to a human-readable string
+interface FormatToStringFunction {
+    (payload: Payload): string
+}
 
-    // Function that formats the `Date` object
-    interface FormatDateFunction {
-        (date: Date): string
-    }
+// Function that formats the `Date` object
+interface FormatDateFunction {
+    (date: Date): string
 }
 
 export class Eudoros {
-    readonly #levels: Array<$E.Level> = []; // Logging levels, extracted from options
-    readonly #options?: $E.Options = {};
+    readonly #levels: Array<Level> = []; // Logging levels, extracted from options
+    readonly #options?: Options = {};
 
     readonly #default_method = 'log';
     readonly #default_levels = [
@@ -109,7 +107,7 @@ export class Eudoros {
         outputDirectory: './logs',
         outputFileExtension: 'log',
         formatArgs: true,
-        formatDate: ('toISOString' as $E.ValidDateToStringMethod),
+        formatDate: ('toISOString' as ValidDateToStringMethod),
         consoleTimestamps: true
     };
 
@@ -124,11 +122,11 @@ export class Eudoros {
      * Internal error reporting.
      * If an exception is caught inside the logger, this function will handle it and display all details.
      *
-     * @param   {string}                    msg     - Descriptive error message
-     * @param   {Error|$E.Payload|unknown}  err     - The error object or the data that caused it
+     * @param   {string}                 msg     - Descriptive error message
+     * @param   {Error|Payload|unknown}  err     - The error object or the data that caused it
      * @private
      */
-    readonly #internalErrorLog = (msg: string, err?: Error|$E.Payload|unknown): void => {
+    readonly #internalErrorLog = (msg: string, err?: Error|Payload|unknown): void => {
         console.group(`\x1b[31m[\u{26A0}]\x1b[0m`, `\x1b[31m${this.#formatDate(new Date())}\x1b[0m`, 'Eudoros caught an exception.');
         console.error(`\x1b[31m[>]\x1b[0m`, (msg && msg.length > 0 || msg === null || msg === undefined) ? msg : (err instanceof Error) ? err?.message : err);
         err && console.trace(err);
@@ -161,7 +159,7 @@ export class Eudoros {
      *
      * @param   {string}    consoleMethod   - The `console` method
      */
-    isValidMethod = (consoleMethod: string): consoleMethod is $E.ConsoleMethod => {
+    isValidMethod = (consoleMethod: string): consoleMethod is ConsoleMethod => {
         return ['log', 'info', 'error', 'warn', 'debug'].includes(consoleMethod);
     }
 
@@ -170,7 +168,7 @@ export class Eudoros {
      *
      * @param 	config	Configuration object
      */
-    constructor (config: $E.Config) {
+    constructor (config: Config) {
         if (config) {
             this.#levels = config?.levels || this.#default_levels; // Assign levels
 
@@ -197,14 +195,14 @@ export class Eudoros {
                 : level.label.toLowerCase();
 
             (this as Record<string, Function>)[methodName] = (this.#options?.synchronous === false)
-                ? async (...args: $E.Payload[]): Promise<void> => {
+                ? async (...args: Payload[]): Promise<void> => {
                     try {
                         this.#handleLog(level, undefined, ...args);
                     } catch (err) {
                         this.#internalErrorLog(`Error during log handling \`${level.label}\`!`, err);
                     }
                 }
-                : (...args: $E.Payload[]): void => {
+                : (...args: Payload[]): void => {
                     try {
                         this.#handleLog(level, undefined, ...args);
                     } catch (err) {
@@ -219,11 +217,11 @@ export class Eudoros {
      * Everything is turned into a single string.
      * There are no user supplied arguments (payload) here, except for the `domain`.
      *
-     * @param   {$E.Level}      level       - The logging level
+     * @param   {Level}         level       - The logging level
      * @param   {string|null}   [domain=''] - Optional domain (extra tag after timestamp)
      * @private
      */
-    #formatGroup = (level: $E.Level, domain?: string|null): string => {
+    #formatGroup = (level: Level, domain?: string|null): string => {
         if (!level.trace) {
             this.#internalErrorLog(`Cannot format trace on \`${level.label}\`, no trace config defined!`)
             return "<Format group error!>";
@@ -253,12 +251,12 @@ export class Eudoros {
      * Apply user defined log level formatting and prepare the payload itself.
      * All `args` are turned into a single string, objects undergo `JSON.stringify`.
      *
-     * @param   {$E.Level}      level       - The logging level
+     * @param   {Level}         level       - The logging level
      * @param   {string|null}   [domain]    - Optional domain (extra tag after timestamp)
-     * @param   {$E.Payload[]}  args        - Log payload
+     * @param   {Payload[]}     args        - Log payload
      * @private
      */
-    #formatPayload = (level: $E.Level, domain?: string|null, ...args: $E.Payload[]): string => {
+    #formatPayload = (level: Level, domain?: string|null, ...args: Payload[]): string => {
         const prefix: string = level.prefix ? level.prefix+" " : '';
         const format = (level.format && Array.isArray(level.format) && level.format.length > 0)
             ?  level.format
@@ -273,7 +271,7 @@ export class Eudoros {
 
         const formatArgs: boolean = this.#options?.formatArgs ?? false;
 
-        let payload: $E.Payload[]|$E.Payload = args;
+        let payload: Payload[]|Payload = args;
 
         if (level?.formatToString) {
             try {
@@ -287,8 +285,8 @@ export class Eudoros {
             }
 
             payload = payload
-                .filter((arg: $E.Payload) => arg !== undefined) // Filter out undefined
-                .map((arg: $E.Payload) => {
+                .filter((arg: Payload) => arg !== undefined) // Filter out undefined
+                .map((arg: Payload) => {
                     if (typeof arg === "number") { // Format numbers
                         return formatArgs
                             ? `\x1b[33m${Number(arg)}\x1b[0m`
@@ -328,12 +326,12 @@ export class Eudoros {
      * If level has file logging enabled, call the file logging method.
      * File logging method uses its own format.
      *
-     * @param   {$E.Level}      level       - The logging level
+     * @param   {Level}         level       - The logging level
      * @param   {string|null}   [domain]    - Optional domain (extra tag after timestamp)
-     * @param   {$E.Payload[]}  args        - Log payload
+     * @param   {Payload[]}     args        - Log payload
      * @private
      */
-    #handleLog: Function = async (level: $E.Level, domain?: string|null, ...args: $E.Payload[]): Promise<void> => {
+    #handleLog: Function = async (level: Level, domain?: string|null, ...args: Payload[]): Promise<void> => {
         const message: string = this.#formatPayload(level, domain, ...args);
 
         let consoleMethod: string;
@@ -348,14 +346,14 @@ export class Eudoros {
 
         // Prepare payload
         const send: Function = (): void => {
-            const trace: $E.Payload = args[args.length - 1];
+            const trace: Payload = args[args.length - 1];
             if (level.trace) {
                 console.group(this.#formatGroup(level, domain));
-                console[consoleMethod as $E.ConsoleMethod](message);
+                console[consoleMethod as ConsoleMethod](message);
                 trace && console.trace(trace);
                 console.groupEnd();
             } else {
-                console[consoleMethod as $E.ConsoleMethod](message);
+                console[consoleMethod as ConsoleMethod](message);
             }
         }
 
@@ -368,19 +366,19 @@ export class Eudoros {
             send()
         }
 
-        if (level.logToFile && this.#options?.outputDirectory) this.#logToFile(level, null, ...args);
+        if (level.logToFile && this.#options?.outputDirectory) this.#logToFile(level, domain, ...args);
     }
 
     /**
      * Prepare the log payload for file logging.
      * File logs are saved as a JSON string to make them easier to plug into Grafana.
      *
-     * @param   {$E.Level}      level       - The logging level
+     * @param   {Level}         level       - The logging level
      * @param   {string|null}   [domain]    - Optional domain (extra tag after timestamp)
-     * @param   {$E.Payload[]}  args        - Log payload
+     * @param   {Payload[]}     args        - Log payload
      * @private
      */
-    #logToFile: Function = (level: $E.Level, domain?: string|null, ...args: $E.Payload[]): void => {
+    #logToFile: Function = (level: Level, domain?: string|null, ...args: Payload[]): void => {
         if (!this.#options?.outputDirectory) {
             this.#internalErrorLog('Cannot log to file! Configuration error, failed to load defaults.')
         } else {
@@ -388,14 +386,14 @@ export class Eudoros {
             // Build date substring for file name, add padded zeros to month and date
             const dateString: string = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
-            let lineHead: $E.FilePayloadHead = {
+            let lineHead: FilePayloadHead = {
                 timestamp: this.#formatDate(date),
                 level: level.label
             }
 
             if (domain) lineHead.domain = domain;
 
-            const line: $E.FilePayload = JSON.stringify({
+            const line: FilePayload = JSON.stringify({
                 ...lineHead,
                 args
             });
@@ -414,16 +412,16 @@ export class Eudoros {
     /**
      * Alternative to dynamically generated methods, includes an extra tag (domain) in the log.
      *
-     * @param	{string}        level	- The logging level
-     * @param	{string}        domain	- Domain (extra tag after timestamp)
-     * @param 	{$E.Payload[]}  args	- Log payload
+     * @param	{string}     level	- The logging level
+     * @param	{string}     domain	- Domain (extra tag after timestamp)
+     * @param 	{Payload[]}  args	- Log payload
      */
-    withDomain: Function = (level: string, domain: string, ...args: $E.Payload[]): void => {
-        const levelObject: $E.Level|undefined = this.#levels.find(obj => obj?.label === level);
+    withDomain: Function = (level: string, domain: string, ...args: Payload[]): void => {
+        const levelObject: Level|undefined = this.#levels.find(obj => obj?.label === level);
 
         if (levelObject)
             try {
-                this.#handleLog(levelObject, domain, ...args)
+                this.#handleLog(levelObject, domain, ...args);
             } catch (err) {
                 this.#internalErrorLog(`Error during error handling \`${level}\` with domain!`, err);
             }
@@ -437,23 +435,23 @@ export class Eudoros {
  *  @constructor
  */
 export class EudorosBuilder {
-    levels: $E.Level[] = []
-    opts: $E.Options = {}
+    levels: Level[] = []
+    opts: Options = {}
 
-    constructor(opts: $E.Options) {
+    constructor(opts: Options) {
         this.opts = opts;
 
         return this;
     }
 
-    addLevel (level: $E.Level): this {
+    addLevel (level: Level): this {
         this.levels.push(level);
 
         return this;
     }
 
     init (): Eudoros {
-        const config: $E.Config = {levels: [...this.levels], options: this.opts}
+        const config: Config = {levels: [...this.levels], options: this.opts}
 
         return new Eudoros(config);
     }
@@ -465,6 +463,6 @@ export class EudorosBuilder {
  * @param   config  - Configuration object with log levels and options.
  * @constructor
  */
-export const init: Function = (config: $E.Config): Eudoros => {
+export const init: Function = (config: Config): Eudoros => {
     return new Eudoros(config)
 }
