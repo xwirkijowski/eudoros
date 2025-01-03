@@ -6,12 +6,12 @@
 
 import * as fs from 'node:fs';
 
-interface Config {
+export interface Config {
     levels: Array<Level>,
     options?: Options
 }
 
-interface Options {
+export interface Options {
     // Whether to switch to synchronous mode, default false
     synchronous?: boolean,
     // Specify log file output directory, if null logging to files disabled
@@ -27,7 +27,7 @@ interface Options {
 }
 
 // The logging level object
-interface Level {
+export interface Level {
     // The name of the logging level
     label: string,
     // Prefix that appears at the start of the log message in console
@@ -53,7 +53,7 @@ interface Level {
 }
 
 // Trace options
-interface Trace {
+export interface Trace {
     // The label passed into `console.group()`
     groupLabel?: string
     groupPrefix?: string,
@@ -61,33 +61,33 @@ interface Trace {
 }
 
 // Logging methods accepted by `console`
-type ConsoleMethod = 'log'|'info'|'error'|'warn'|'debug';
+export type ConsoleMethod = 'log'|'info'|'error'|'warn'|'debug';
 
 // Valid formatting methods for Date
-type ValidDateToStringMethod = {
+export type ValidDateToStringMethod = {
     [Key in keyof Date]: Date[Key] extends (this: Date) => string ? Key : never
 }[keyof Date]
 
 // Head of the log with information set at the time of insertion (not from payload)
-type FilePayloadHead = {
+export type FilePayloadHead = {
     timestamp: string,
     level: string,
     domain?: string,
 }
 
 // Stringified log to be inserted to log file
-type FilePayload = string;
+export type FilePayload = string;
 
 // The logging payload - what is passed to the console method
-type Payload = string|number|boolean|object|Array<string|number|boolean|object>;
+export type Payload = string|number|boolean|object|Array<string|number|boolean|object>;
 
 // Function that translates objects passed as payload to a human-readable string
-interface FormatToStringFunction {
+export interface FormatToStringFunction {
     (payload: Payload): string
 }
 
 // Function that formats the `Date` object
-interface FormatDateFunction {
+export interface FormatDateFunction {
     (date: Date): string
 }
 
