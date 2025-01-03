@@ -1,3 +1,5 @@
+![Header](./header.png)
+
 # 🛠️ Eudoros - Compact & Flexible Logging Utility
 
 ![NPM Version](https://img.shields.io/npm/v/eudoros?style=flat&logo=npm&logoColor=ffffff&logoSize=auto&labelColor=C61B3B&color=202B2E)
