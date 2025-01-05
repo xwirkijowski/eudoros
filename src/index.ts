@@ -99,7 +99,7 @@ export class Eudoros {
     readonly #default_levels = [
         {
             label: 'log',
-            prefix: '[>]'
+            prefix: '[-]'
         }
     ];
     readonly #default_options = {
