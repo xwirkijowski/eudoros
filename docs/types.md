@@ -1,5 +1,7 @@
 # Eudoros Documentation
 
+[OUTDATED]
+
 ## Configuration
 
 The Eudoros constructor accepts a `$E.Config` object with the following properties:
