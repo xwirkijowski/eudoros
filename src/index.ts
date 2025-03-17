@@ -24,6 +24,8 @@ export interface Options {
     formatDate?: ValidDateToStringMethod|FormatDateFunction
     // Enable or disable timestamps in console logs
     consoleTimestamps?: boolean
+    // Customize placement of specific components of your log messages
+    globalFormat?: (level: Level, context: "payload"|"group", prefix: string, timestamp: string, payload: Payload|undefined, domain?: string) => string
 }
 
 // The logging level object
@@ -108,7 +110,7 @@ export class Eudoros {
         outputFileExtension: 'log',
         formatArgs: true,
         formatDate: ('toISOString' as ValidDateToStringMethod),
-        consoleTimestamps: true
+        consoleTimestamps: true,
     };
 
     /**
@@ -238,7 +240,11 @@ export class Eudoros {
             const timestamp: string = withTimestamp ?
                 `${format[0]}${this.#formatDate(new Date())}${format[1]}` + " "
                 : '';
-
+            
+            if (this.#options?.globalFormat) {
+                return (this.#options.globalFormat(level, 'group', prefix, timestamp, undefined, domain||undefined))
+            }
+            
             domain = (domain)
                 ? `${format[0]}[${domain}]${format[1]}` + " "
                 : '';
@@ -312,10 +318,14 @@ export class Eudoros {
             payload = JSON.stringify(payload, null, 2);
         }
 
+        if (this.#options?.globalFormat) {
+            return (this.#options.globalFormat(level, 'payload', prefix, timestamp, payload, domain||undefined))
+        }
+        
         if (domain) {
             domain = `${format[0]}[${domain}]${format[1]}` + " ";
         }
-
+        
         return (level.trace)
             ? `${prefix}${payload}`
             : `${prefix}${timestamp}${domain??''}${format[2]||''}${payload}${format[3]||''}`;
